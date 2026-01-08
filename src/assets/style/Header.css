@@ -1,0 +1,207 @@
+/* -------------------- Header Chung -------------------- */
+.header-custom {
+  height: 60px;
+  background-color: #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  display: flex;
+  align-items: center;
+  padding: 0 15px;
+  z-index: 1000;
+}
+
+/* -------------------- Thanh Tìm Kiếm -------------------- */
+.header-search-box {
+  width: 280px;
+}
+
+.search-input-group {
+  border-radius: 10px;
+  overflow: hidden;
+  background-color: #f5f6fa !important;
+  transition: all 0.2s;
+}
+
+.search-input-group:hover {
+  background-color: #e9edf7 !important;
+}
+
+.search-input {
+  padding: 8px 12px !important;
+  font-size: 14px;
+  border: none !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+
+.search-input:focus {
+  outline: none;
+  box-shadow: none !important;
+  background-color: #eef1fb !important;
+}
+
+.search-icon-wrapper {
+  background-color: transparent !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 12px !important;
+}
+
+.search-icon {
+  color: #33a06a !important;
+  transition: transform 0.2s;
+}
+
+.search-icon-wrapper:hover .search-icon {
+  transform: scale(1.1);
+}
+
+/* -------------------- Icon Chức Năng -------------------- */
+.icon-group {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.header-icon {
+  color: #555;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.header-icon:hover {
+  color: #33a06a;
+  transform: scale(1.1);
+}
+
+/* Badge thông báo */
+.header-icon .badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  font-size: 0.65rem;
+  padding: 2px 6px;
+  border-radius: 50%;
+  background-color: #ff4d4f;
+  color: #fff;
+}
+
+/* -------------------- Profile Section -------------------- */
+.profile-section {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.profile-section:hover {
+  background-color: #f1f3f6;
+}
+
+.profile-avatar {
+  width: 34px;
+  height: 34px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 1px solid #ddd;
+}
+
+.profile-name {
+  display: flex;
+  flex-direction: column;
+  margin-left: 8px;
+}
+
+.profile-name span:first-child {
+  font-weight: 500;
+  font-size: 0.95rem;
+  color: #333;
+}
+
+.profile-name span:last-child {
+  font-size: 0.75rem;
+  color: #888;
+}
+
+/* Dropdown Menu */
+.dropdown-menu {
+  border-radius: 10px;
+  min-width: 160px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  padding: 6px 0;
+}
+
+.dropdown-item {
+  font-size: 0.9rem;
+  color: #555;
+  padding: 8px 16px;
+  transition: all 0.2s;
+}
+
+.dropdown-item:hover {
+  background-color: #f1f3f6;
+  color: #33a06a;
+}
+
+/* Divider */
+.dropdown-divider {
+  border-color: #eee;
+  margin: 4px 0;
+}
+/* -------------------- Dropdown Thông Báo -------------------- */
+.dropdown-menu.notifications-dropdown {
+    min-width: 280px;
+    max-height: 400px; /* Giới hạn chiều cao */
+    overflow-y: auto; /* Scroll nếu nhiều thông báo */
+    padding: 0.5rem;
+    border-radius: 10px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    background-color: #fff;
+    border: none;
+}
+
+/* Scrollbar đẹp */
+.dropdown-menu.notifications-dropdown::-webkit-scrollbar {
+    width: 6px;
+}
+.dropdown-menu.notifications-dropdown::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+.dropdown-menu.notifications-dropdown::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+.dropdown-menu.notifications-dropdown::-webkit-scrollbar-thumb:hover {
+    background: #888;
+}
+
+/* Item thông báo */
+.notifications-dropdown .list-group-item {
+    border: none;
+    padding: 10px 12px;
+    border-radius: 8px;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+/* Hover highlight */
+.notifications-dropdown .list-group-item:hover {
+    background-color: #f0f8ff;
+}
+
+/* Text thông báo */
+.notifications-dropdown .list-group-item span {
+    font-size: 0.9rem;
+    color: #333;
+}
+
+/* Timestamp */
+.notifications-dropdown .list-group-item small {
+    font-size: 0.7rem;
+    color: #888;
+}

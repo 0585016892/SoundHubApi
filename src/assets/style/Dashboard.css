@@ -1,0 +1,32 @@
+/* src/assets/dashboard.css */
+.dashboard-page h3 {
+  color: #333;
+}
+
+.hover-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+.table-dashboard th {
+  font-weight: 600;
+  color: #555;
+}
+
+.table-dashboard td {
+  vertical-align: middle;
+}
+
+.table-dashboard tr:hover {
+  background-color: #f9f9f9;
+}
+
+.header-icon {
+  cursor: pointer;
+  color: #555;
+  transition: color 0.2s;
+}
+
+.header-icon:hover {
+  color: #007bff;
+}
