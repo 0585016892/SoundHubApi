@@ -6,13 +6,14 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianG
 import axios from "axios";
 
 const Dashboard = () => {
+  const API_URL = process.env.REACT_APP_API_URL; 
   const [infoCards, setInfoCards] = useState({});
   const [ordersData, setOrdersData] = useState([]);
   const [productCategories, setProductCategories] = useState([]);
   const [recentOrders, setRecentOrders] = useState([]);
 
   useEffect(() => {
-    axios.get("http://localhost:5000/api/dashboard")
+    axios.get(`${API_URL}/dashboard`)
       .then(res => {
         setInfoCards(res.data.infoCards);
         setOrdersData(res.data.ordersData);

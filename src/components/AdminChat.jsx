@@ -4,6 +4,7 @@ import socket from "../utils/socket";
 import { UserContext } from "../context/UserContext";
 
 const AdminChat = () => {
+  const API_URL = process.env.REACT_APP_API_URL;
   const { user } = useContext(UserContext);
   const [users, setUsers] = useState([]); // danh sách khách từ DB
   const [selectedUser, setSelectedUser] = useState(null);
@@ -58,7 +59,7 @@ const AdminChat = () => {
     } else {
       // Lấy lịch sử chat từ server
       try {
-        const res = await fetch(`http://localhost:5000/api/chat/history/${userId}`);
+        const res = await fetch(`${API_URL}/chat/history/${userId}`);
         const data = await res.json(); // [{from: "admin"|"user", text: "..."}]
         setMessages(data);
         setAllMessages(prev => ({ ...prev, [userId]: data }));

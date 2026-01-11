@@ -1,6 +1,6 @@
 // src/api/colorApi.js
 import axios from "axios";
-const API_URL = "http://localhost:5000/api";
+const API_URL = process.env.REACT_APP_API_URL;
 
 // Lấy danh sách màu, có thể phân trang và tìm kiếm
 export const getColors = async ({ page = 1, limit = 10, search = "" } = {}) => {

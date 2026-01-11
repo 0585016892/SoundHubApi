@@ -1,6 +1,6 @@
 // src/api/statisApi.js
 import axios from "axios";
-const API_URL = "http://localhost:5000/api";
+const API_URL = process.env.REACT_APP_API_URL;
 
 // Doanh thu
 export const getRevenue = async (type = "day", start_date, end_date) => {
@@ -8,7 +8,6 @@ export const getRevenue = async (type = "day", start_date, end_date) => {
     const res = await axios.get(`${API_URL}/statistics/revenue`, {
       params: { type, start_date, end_date }
     });
-    console.log(res);
     
     return res.data;
   } catch (error) {

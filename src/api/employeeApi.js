@@ -1,7 +1,7 @@
 // src/api/employeeApi.js
 import axios from "axios";
 
-const API_URL = "http://localhost:5000/api"; // URL backend
+const API_URL = process.env.REACT_APP_API_URL; // URL backend
 
 // Lấy danh sách nhân viên có phân trang
 export const getEmployees = async (page = 1, limit = 10, keyword = "") => {

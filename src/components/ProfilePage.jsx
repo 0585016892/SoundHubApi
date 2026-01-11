@@ -6,10 +6,10 @@ import toast from "react-hot-toast";
 import { updateProfile, changePassword } from "../api/userApi";
 import { useNavigate } from "react-router-dom";
 import { FaUser, FaLock, FaSignOutAlt } from "react-icons/fa";
-import logo from '../assets/img/logo.png'
+import logo from '../assets/img/logo2.png'
 import axios from "axios";
 const ProfilePage = () => {
-  const WEB_URL = "http://localhost:5000";
+  const WEB_URL = process.env.REACT_APP_WEB_URL; ;
   const navigate = useNavigate();
   const { user, logout } = useContext(UserContext);
 const [loading, setLoading] = useState(false);

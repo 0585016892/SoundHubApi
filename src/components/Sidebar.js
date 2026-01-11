@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import logo from '../assets/img/logo.png';
+import logo from '../assets/img/logo2.png';
 import {
   AiOutlineDashboard,
   AiOutlineAppstore,
@@ -36,14 +36,14 @@ const menuItems = [
     icon: AiOutlineShoppingCart, 
     name: 'Đơn hàng', 
     link: '/orders', 
-    badge: 5 // số đơn chờ xử lý
+    // badge: 5 // số đơn chờ xử lý
   },
   { icon: AiOutlineTag, name: 'Mã giảm giá', link: '/coupons/danh-sach' },
   { 
     icon: AiOutlineMail, 
     name: 'Tin nhắn', 
     link: '/messages', 
-    badge: 2 
+    // badge: 2 
   },
   { 
     icon: AiOutlineUser, 
@@ -57,16 +57,6 @@ const menuItems = [
     icon: FaChartBar, 
     name: 'Thống kê báo cáo', 
     link: '/statistics', 
-  },
-  { icon: AiOutlineSetting, 
-    name: 'Cài đặt', 
-    link: '/settings' ,
-    submenu: [
-        {
-        icon: AiOutlineAppstore,
-        name: 'Danh sách sản phẩm',
-        link: '/products/danh-sach',
-      },]
   },
 ];
 
@@ -134,7 +124,7 @@ const Sidebar = () => {
         {/* Logo */}
         <div className="sidebar-logo d-flex align-items-center">
           <img src={logo} alt="Logo" className="logo-img" />
-          <span className="brand-name fw-bold ms-2">TDC Admin</span>
+          <span className="brand-name fw-bold ms-2">SoundHub Admin</span>
         </div>
 
         {/* Menu */}

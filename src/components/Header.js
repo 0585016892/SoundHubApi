@@ -1,7 +1,7 @@
 // src/components/Header.jsx
 import React, { useState, useContext, useEffect } from 'react';
 import { Navbar, Container, Badge, Dropdown, ListGroup } from 'react-bootstrap';
-import logo from '../assets/img/logo.png';
+import Logo from '../assets/img/logo2.png';
 import { 
   MdOutlineDarkMode, 
   MdOutlineFullscreen, 
@@ -63,10 +63,7 @@ const Header = () => {
         {/* Right Icons & Profile */}
         <div className="d-flex align-items-center gap-3">
           <div className="d-flex align-items-center gap-3 me-3">
-            <MdOutlineDarkMode size={24} className="header-icon" style={{ cursor: 'pointer' }} />
-            <MdOutlineFullscreen size={24} className="header-icon" style={{ cursor: 'pointer' }} />
-            <MdOutlineChatBubbleOutline size={24} className="header-icon" style={{ cursor: 'pointer' }} />
-
+           
             {/* Notification Dropdown */}
             <Dropdown show={showNotifDropdown} onToggle={() => setShowNotifDropdown(!showNotifDropdown)}>
               <Dropdown.Toggle as="div" className="position-relative" style={{ cursor: 'pointer' }}>
@@ -121,7 +118,7 @@ const Header = () => {
           {/* Profile Dropdown */}
           <Dropdown show={showProfileDropdown} onToggle={() => setShowProfileDropdown(!showProfileDropdown)}>
             <Dropdown.Toggle as="div" className="d-flex align-items-center profile-section" style={{ cursor: 'pointer' }}>
-              <img src={logo} alt="Avatar" className="rounded-circle me-2" style={{ width: '35px', height: '35px' }} />
+              <img src={Logo} alt="Avatar" className="rounded-circle me-2" style={{ width: '35px', height: '35px' }} />
               <div className="d-flex flex-column lh-1">
                 <span className="fw-bold text-dark">{user.full_name}</span>
               </div>

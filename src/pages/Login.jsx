@@ -8,6 +8,8 @@ import Logo from '../assets/img/logo2.png';
 import socket from "../utils/socket";
 
 const Login = () => {
+  const API_URL = process.env.REACT_APP_API_URL; 
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -21,7 +23,7 @@ const handleSubmit = async (e) => {
   setError("");
 
   try {
-    const res = await axios.post("http://localhost:5000/api/auth/login", { email, password });
+    const res = await axios.post(`${API_URL}/auth/login`, { email, password });
     
     // Lưu user và token
     login(res.data.user);

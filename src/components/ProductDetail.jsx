@@ -11,6 +11,8 @@ import {
 } from "react-bootstrap";
 
 const ProductDetail = () => {
+  const API_URL = process.env.REACT_APP_API_URL; 
+  const WEB_URL = process.env.REACT_APP_WEB_URL; 
   const { id } = useParams();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -20,7 +22,7 @@ const ProductDetail = () => {
     const fetchProduct = async () => {
       try {
         const res = await fetch(
-          `http://localhost:5000/api/products/productdetail/${id}`
+          `${API_URL}/products/productdetail/${id}`
         );
         const data = await res.json();
 
@@ -75,7 +77,7 @@ const ProductDetail = () => {
 
             <Card.Body className="text-center p-4">
               <img
-                src={`http://localhost:5000/uploads/products/${product.image}`}
+                src={`${WEB_URL}/uploads/products/${product.image}`}
                 alt={product.name}
                 className="img-fluid rounded shadow"
                 style={{
@@ -188,7 +190,7 @@ const ProductDetail = () => {
                     >
                       <td>
                         <img
-                          src={`http://localhost:5000/uploads/products/${v.image}`}
+                          src={`${WEB_URL}/uploads/products/${v.image}`}
                           alt={v.name_variant}
                           className="img-fluid rounded"
                           style={{

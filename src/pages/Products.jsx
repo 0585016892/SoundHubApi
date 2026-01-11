@@ -5,11 +5,12 @@ import { getProducts, deleteProduct, createProduct, updateProduct, updateVariant
 import { getBrands } from "../api/brandApi";
 import { getCategories } from "../api/categoryApi";
 import { getCoupons } from "../api/couponApi";
-import { MdAutoFixOff,MdAddBox ,MdDelete  } from "react-icons/md";
+import { MdAutoFixOff,MdAddBox ,MdDelete  ,MdRemoveRedEye} from "react-icons/md";
 import ProductDetail from "../components/ProductDetail";
 import { useNavigate } from "react-router-dom";
 const Products = () => {
-  const WEB_URL = "http://localhost:5000";
+  const WEB_URL = process.env.REACT_APP_API_URL; 
+
   const limit = 10;
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
@@ -319,7 +320,7 @@ const fetchProducts = async (page) => {
                         className="me-1"
                         onClick={() => navigate(`/productDetail/${product.id}`)}
                       >
-                        <MdAutoFixOff />
+                        <MdRemoveRedEye />
                       </Button>
                     </OverlayTrigger>
                     <OverlayTrigger

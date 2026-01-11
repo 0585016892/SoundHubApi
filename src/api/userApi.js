@@ -1,7 +1,7 @@
 // src/api/userApi.js
 import axios from "axios";
 
-const API_URL = "http://localhost:5000/api"; // đổi theo URL backend của bạn
+const API_URL = process.env.REACT_APP_API_URL; // đổi theo URL backend của bạn
 
 
 // Cập nhật thông tin cá nhân
