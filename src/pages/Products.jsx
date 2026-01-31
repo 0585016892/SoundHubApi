@@ -9,7 +9,7 @@ import { MdAutoFixOff,MdAddBox ,MdDelete  ,MdRemoveRedEye} from "react-icons/md"
 import ProductDetail from "../components/ProductDetail";
 import { useNavigate } from "react-router-dom";
 const Products = () => {
-  const WEB_URL = process.env.REACT_APP_API_URL; 
+  const WEB_URL = process.env.REACT_APP_WEB_URL; 
 
   const limit = 10;
   const navigate = useNavigate();
