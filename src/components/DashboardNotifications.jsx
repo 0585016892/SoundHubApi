@@ -1,7 +1,17 @@
-// src/components/DashboardNotifications.jsx
 import React, { useState } from "react";
-import { Card, Badge } from "react-bootstrap";
+import { Badge, Card, List, Typography, Popover } from "antd";
+import {
+  BellFilled,
+  ShoppingCartOutlined,
+  MessageOutlined,
+  WarningOutlined,
+  GiftOutlined,
+  SettingOutlined,
+} from "@ant-design/icons";
 
+const { Text } = Typography;
+
+// DATA DEMO
 const notificationsData = [
   { id: 1, title: "Đơn hàng mới", message: "Có 3 đơn hàng mới chờ xử lý", type: "order" },
   { id: 2, title: "Tin nhắn mới", message: "Khách hàng Nguyễn Văn A gửi tin nhắn", type: "message" },
@@ -10,48 +20,58 @@ const notificationsData = [
   { id: 5, title: "Hệ thống", message: "Backup dữ liệu thành công", type: "system" },
 ];
 
-const typeColor = {
-  order: "success",
-  message: "info",
-  alert: "danger",
-  coupon: "warning",
-  system: "secondary",
+// ICON & COLOR
+const typeConfig = {
+  order: { color: "green", icon: <ShoppingCartOutlined /> },
+  message: { color: "blue", icon: <MessageOutlined /> },
+  alert: { color: "red", icon: <WarningOutlined /> },
+  coupon: { color: "orange", icon: <GiftOutlined /> },
+  system: { color: "gray", icon: <SettingOutlined /> },
 };
 
 const DashboardNotifications = () => {
-  const [show, setShow] = useState(false);
+  const [open, setOpen] = useState(false);
 
-  const toggleNotifications = () => setShow(!show);
+  const content = (
+    <Card
+      style={{ width: 320, maxHeight: 400, overflowY: "auto" }}
+      bodyStyle={{ padding: 0 }}
+    >
+      <div style={{ padding: 10, fontWeight: 600, borderBottom: "1px solid #eee" }}>
+        🔔 Thông báo
+      </div>
+
+      <List
+        itemLayout="horizontal"
+        dataSource={notificationsData}
+        renderItem={(n) => (
+          <List.Item style={{ padding: "10px 12px", cursor: "pointer" }}>
+            <List.Item.Meta
+              avatar={
+                <Badge color={typeConfig[n.type].color} text={typeConfig[n.type].icon} />
+              }
+              title={<Text strong>{n.title}</Text>}
+              description={<Text type="secondary">{n.message}</Text>}
+            />
+          </List.Item>
+        )}
+      />
+    </Card>
+  );
 
   return (
     <div style={{ position: "fixed", top: 70, right: 20, zIndex: 1200 }}>
-      {/* Button hiển thị số thông báo */}
-      <div onClick={toggleNotifications} style={{ cursor: "pointer", position: "relative" }}>
-        <Badge bg="danger" pill style={{ position: "absolute", top: -5, right: -5, fontSize: "0.7rem" }}>
-          {notificationsData.length}
+      <Popover
+        content={content}
+        trigger="click"
+        open={open}
+        onOpenChange={setOpen}
+        placement="bottomRight"
+      >
+        <Badge count={notificationsData.length} offset={[-5, 5]}>
+          <BellFilled style={{ fontSize: 24, color: "#1677ff", cursor: "pointer" }} />
         </Badge>
-        <i className="bi bi-bell-fill" style={{ fontSize: 24, color: "#33a06a" }}></i>
-      </div>
-
-      {/* Notification Dropdown */}
-      {show && (
-        <Card style={{ width: 300, maxHeight: 400, overflowY: "auto" }} className="shadow-sm mt-2">
-          <Card.Header className="fw-bold">Thông báo</Card.Header>
-          <Card.Body className="p-1">
-            {notificationsData.map((n) => (
-              <Card key={n.id} className="mb-1 shadow-sm" style={{ cursor: "pointer" }}>
-                <Card.Body className="p-2 d-flex align-items-start gap-2">
-                  <Badge bg={typeColor[n.type]} pill style={{ width: 10, height: 10, minWidth: 10, borderRadius: "50%", marginTop: 6 }}></Badge>
-                  <div>
-                    <div className="fw-bold">{n.title}</div>
-                    <div className="text-muted" style={{ fontSize: "0.8rem" }}>{n.message}</div>
-                  </div>
-                </Card.Body>
-              </Card>
-            ))}
-          </Card.Body>
-        </Card>
-      )}
+      </Popover>
     </div>
   );
 };

@@ -10,6 +10,7 @@ import './assets/style/Header.css';
 import './assets/style/Dashboard.css';
 import './assets/style/Product.css';
 import { UserProvider } from "./context/UserContext";
+import 'antd/dist/reset.css';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(

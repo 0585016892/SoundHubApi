@@ -4,15 +4,22 @@ import {
   Button,
   Modal,
   Form,
-  InputGroup,
-  Row,
-  Col,
+  Input,
+  Upload,
+  Select,
+  Tag,
+  Space,
   Image,
+  Spin,
   Pagination,
-  OverlayTrigger,
-  Tooltip,
-  Spinner,
-} from "react-bootstrap";
+  message,
+} from "antd";
+import {
+  PlusOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  UploadOutlined,
+} from "@ant-design/icons";
 import toast from "react-hot-toast";
 import {
   getBrands1,
@@ -20,40 +27,23 @@ import {
   updateBrand,
   deleteBrand,
 } from "../api/brandApi";
-import { MdAutoFixOff, MdDelete } from "react-icons/md";
 
 const BrandPage = () => {
-  const WEB_URL = "http://localhost:5000";
+  const WEB_URL = process.env.REACT_APP_WEB_URL;
 
   const [brands, setBrands] = useState([]);
-  const [showModal, setShowModal] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const [openModal, setOpenModal] = useState(false);
   const [editBrand, setEditBrand] = useState(null);
 
-  const [loadingList, setLoadingList] = useState(true);
-  const [loadingSubmit, setLoadingSubmit] = useState(false);
+  const [form] = Form.useForm();
 
-  /* DELETE MODAL */
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [brandToDelete, setBrandToDelete] = useState(null);
-  const [loadingDelete, setLoadingDelete] = useState(false);
-
-  const [formData, setFormData] = useState({
-    name: "",
-    slug: "",
-    origin: "",
-    description: "",
-    logo: null,
-    status: "active",
-  });
-
-  const [allowEditSlug, setAllowEditSlug] = useState(false);
   const [search, setSearch] = useState("");
-
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [currentPage, setCurrentPage] = useState(1);
 
-  /* =============== SLUG ================= */
+  /* SLUG */
   const slugify = (text) =>
     text
       .toString()
@@ -65,67 +55,50 @@ const BrandPage = () => {
       .replace(/\s+/g, "-")
       .replace(/\-+/g, "-");
 
-  /* =============== LOAD ================= */
+  /* LOAD DATA */
   const loadBrands = async () => {
-    setLoadingList(true);
+    setLoading(true);
     try {
       const data = await getBrands1(page, 8, search);
       setBrands(data.data || []);
       setTotalPages(data.totalPages || 1);
-      setCurrentPage(data.currentPage || 1);
     } catch {
       toast.error("Lỗi tải thương hiệu");
     }
-    setLoadingList(false);
+    setLoading(false);
   };
 
   useEffect(() => {
     loadBrands();
   }, [page, search]);
 
-  /* =============== ADD / EDIT ================= */
-  const handleShow = (brand = null) => {
+  /* OPEN MODAL */
+  const openAdd = () => {
+    setEditBrand(null);
+    form.resetFields();
+    setOpenModal(true);
+  };
+
+  const openEdit = (brand) => {
     setEditBrand(brand);
-    setAllowEditSlug(false);
-
-    if (brand) {
-      setFormData({
-        name: brand.name,
-        slug: brand.slug,
-        origin: brand.origin,
-        description: brand.description,
-        logo: null,
-        status: brand.status,
-      });
-    } else {
-      setFormData({
-        name: "",
-        slug: "",
-        origin: "",
-        description: "",
-        logo: null,
-        status: "active",
-      });
-    }
-    setShowModal(true);
-  };
-
-  const handleNameChange = (value) => {
-    setFormData((prev) => ({
-      ...prev,
-      name: value,
-      slug: allowEditSlug ? prev.slug : slugify(value),
-    }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoadingSubmit(true);
-
-    const fd = new FormData();
-    Object.keys(formData).forEach((key) => {
-      if (formData[key] !== null) fd.append(key, formData[key]);
+    form.setFieldsValue({
+      name: brand.name,
+      slug: brand.slug,
+      origin: brand.origin,
+      description: brand.description,
+      status: brand.status,
     });
+    setOpenModal(true);
+  };
+
+  /* SUBMIT */
+  const onFinish = async (values) => {
+    const fd = new FormData();
+    Object.keys(values).forEach((key) => {
+      if (key !== "logo") fd.append(key, values[key]);
+    });
+
+    if (values.logo?.file) fd.append("logo", values.logo.file);
 
     try {
       if (editBrand) {
@@ -135,276 +108,163 @@ const BrandPage = () => {
         await createBrand(fd);
         toast.success("Thêm thương hiệu thành công");
       }
-      setShowModal(false);
+      setOpenModal(false);
       loadBrands();
     } catch {
       toast.error("Lỗi khi lưu");
     }
-    setLoadingSubmit(false);
   };
 
-  /* =============== DELETE ================= */
-  const openDeleteModal = (brand) => {
-    setBrandToDelete(brand);
-    setShowDeleteModal(true);
+  /* DELETE */
+  const handleDelete = (brand) => {
+    Modal.confirm({
+      title: "Xóa thương hiệu?",
+      content: `Bạn chắc chắn muốn xóa ${brand.name}?`,
+      okText: "Xóa",
+      okType: "danger",
+      cancelText: "Hủy",
+      onOk: async () => {
+        await deleteBrand(brand.id);
+        toast.success("Đã xóa");
+        loadBrands();
+      },
+    });
   };
 
-  const confirmDelete = async () => {
-    if (!brandToDelete) return;
-
-    setLoadingDelete(true);
-    try {
-      await deleteBrand(brandToDelete.id);
-      toast.success("Đã xóa thương hiệu");
-      setShowDeleteModal(false);
-      loadBrands();
-    } catch {
-      toast.error("Lỗi khi xóa");
-    }
-    setLoadingDelete(false);
-  };
-
-  /* =============== PAGINATION ================= */
-  const renderPagination = () => {
-    if (totalPages <= 1) return null;
-
-    let items = [];
-    for (let i = 1; i <= totalPages; i++) {
-      items.push(
-        <Pagination.Item
-          key={i}
-          active={i === currentPage}
-          onClick={() => setPage(i)}
-        >
-          {i}
-        </Pagination.Item>
-      );
-    }
-    return <Pagination className="justify-content-center mt-3">{items}</Pagination>;
-  };
+  /* TABLE COLUMNS */
+  const columns = [
+    {
+      title: "#",
+      render: (_, __, i) => (page - 1) * 8 + i + 1,
+    },
+    {
+      title: "Logo",
+      dataIndex: "logo",
+      render: (logo) => (
+        <Image
+          width={60}
+          src={`${WEB_URL}/uploads/products/${logo}`}
+          style={{ borderRadius: 8 }}
+        />
+      ),
+    },
+    {
+      title: "Tên thương hiệu",
+      dataIndex: "name",
+      render: (t) => <b>{t}</b>,
+    },
+    {
+      title: "Xuất xứ",
+      dataIndex: "origin",
+    },
+    {
+      title: "Mô tả",
+      dataIndex: "description",
+      render: (d) => (d?.length > 40 ? d.slice(0, 40) + "..." : d),
+    },
+    {
+      title: "Trạng thái",
+      dataIndex: "status",
+      render: (s) =>
+        s === "active" ? <Tag color="green">Hoạt động</Tag> : <Tag>Ngừng</Tag>,
+    },
+    {
+      title: "Hành động",
+      render: (_, record) => (
+        <Space>
+          <Button icon={<EditOutlined />} onClick={() => openEdit(record)} />
+          <Button
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() => handleDelete(record)}
+          />
+        </Space>
+      ),
+    },
+  ];
 
   return (
-    <div className="p-3">
-      <h4 className="mb-3 fw-bold text-primary">🎧 Quản lý thương hiệu Loa</h4>
+    <div style={{ padding: 20 }}>
+      <h2>🎧 Quản lý thương hiệu Loa</h2>
 
-      <Row className="mb-3">
-        <Col md="auto">
-          <Button variant="primary" onClick={() => handleShow()}>
-            + Thêm thương hiệu
-          </Button>
-        </Col>
+      {/* SEARCH + ADD */}
+      <Space style={{ marginBottom: 16 }}>
+        <Button type="primary" icon={<PlusOutlined />} onClick={openAdd}>
+          Thêm thương hiệu
+        </Button>
 
-        <Col md={4}>
-          <InputGroup>
-            <Form.Control
-              placeholder="🔍 Tìm kiếm thương hiệu..."
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(1);
-              }}
-            />
-          </InputGroup>
-        </Col>
-      </Row>
+        <Input.Search
+          placeholder="Tìm thương hiệu..."
+          allowClear
+          onSearch={(v) => {
+            setSearch(v);
+            setPage(1);
+          }}
+          style={{ width: 300 }}
+        />
+      </Space>
 
       {/* TABLE */}
-      {loadingList ? (
-        <div className="text-center py-5">
-          <Spinner animation="border" />
-        </div>
-      ) : (
-        <>
-          <Table bordered hover className="shadow-sm align-middle">
-            <thead className="bg-light text-center">
-              <tr>
-                <th>#</th>
-                <th>Logo</th>
-                <th>Tên</th>
-                <th>Xuất xứ</th>
-                <th>Mô tả</th>
-                <th>Trạng thái</th>
-                <th>Thao tác</th>
-              </tr>
-            </thead>
+      <Table
+        columns={columns}
+        dataSource={brands}
+        rowKey="id"
+        loading={loading}
+        pagination={false}
+        bordered
+      />
 
-            <tbody>
-              {brands.length > 0 ? (
-                brands.map((b, i) => (
-                  <tr key={b.id}>
-                    <td>{(currentPage - 1) * 10 + i + 1}</td>
-                    <td className="text-center">
-                      <Image
-                        src={`${WEB_URL}/uploads/products/${b.logo}`}
-                        width={60}
-                        height={60}
-                        rounded
-                      />
-                    </td>
-                    <td className="fw-bold">{b.name}</td>
-                    <td>{b.origin}</td>
-                    <td>
-                      {b.description?.length > 40
-                        ? b.description.slice(0, 40) + "..."
-                        : b.description}
-                    </td>
-                    <td>
-                      <span
-                        className={`badge ${
-                          b.status === "active"
-                            ? "bg-success"
-                            : "bg-secondary"
-                        }`}
-                      >
-                        {b.status === "active" ? "Hoạt động" : "Ngừng"}
-                      </span>
-                    </td>
-                    <td className="text-center">
-                      <OverlayTrigger overlay={<Tooltip>Sửa</Tooltip>}>
-                        <Button
-                          size="sm"
-                          variant="outline-success"
-                          className="me-2"
-                          onClick={() => handleShow(b)}
-                        >
-                          <MdAutoFixOff />
-                        </Button>
-                      </OverlayTrigger>
+      <Pagination
+        current={page}
+        total={totalPages * 10}
+        pageSize={10}
+        onChange={(p) => setPage(p)}
+        style={{ marginTop: 20, textAlign: "right" }}
+      />
 
-                      <OverlayTrigger overlay={<Tooltip>Xóa</Tooltip>}>
-                        <Button
-                          size="sm"
-                          variant="outline-danger"
-                          onClick={() => openDeleteModal(b)}
-                        >
-                          <MdDelete />
-                        </Button>
-                      </OverlayTrigger>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={7} className="text-center py-3">
-                    Không có thương hiệu
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </Table>
-
-          {renderPagination()}
-        </>
-      )}
-
-      {/* ADD / EDIT MODAL */}
-      <Modal show={showModal} centered onHide={() => setShowModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title className="fw-bold">
-            {editBrand ? "Sửa thương hiệu" : "Thêm thương hiệu"}
-          </Modal.Title>
-        </Modal.Header>
-
-        <Modal.Body>
-          <Form onSubmit={handleSubmit}>
-            <Form.Group className="mb-2">
-              <Form.Label>Tên thương hiệu</Form.Label>
-              <Form.Control
-                value={formData.name}
-                onChange={(e) => handleNameChange(e.target.value)}
-                required
-              />
-            </Form.Group>
-
-            <Form.Check
-              className="mb-2"
-              type="checkbox"
-              label="Cho phép chỉnh slug"
-              checked={allowEditSlug}
-              onChange={(e) => {
-                setAllowEditSlug(e.target.checked);
-                if (!e.target.checked) {
-                  setFormData((prev) => ({
-                    ...prev,
-                    slug: slugify(prev.name),
-                  }));
-                }
-              }}
+      {/* MODAL ADD / EDIT */}
+      <Modal
+        open={openModal}
+        onCancel={() => setOpenModal(false)}
+        title={editBrand ? "Sửa thương hiệu" : "Thêm thương hiệu"}
+        onOk={() => form.submit()}
+      >
+        <Form form={form} layout="vertical" onFinish={onFinish}>
+          <Form.Item name="name" label="Tên thương hiệu" rules={[{ required: true }]}>
+            <Input
+              onChange={(e) =>
+                form.setFieldsValue({
+                  slug: slugify(e.target.value),
+                })
+              }
             />
+          </Form.Item>
 
-            <Form.Group className="mb-2">
-              <Form.Label>Slug</Form.Label>
-              <Form.Control
-                value={formData.slug}
-                readOnly={!allowEditSlug}
-                onChange={(e) =>
-                  setFormData({ ...formData, slug: e.target.value })
-                }
-              />
-            </Form.Group>
+          <Form.Item name="slug" label="Slug">
+            <Input />
+          </Form.Item>
 
-            <Form.Group className="mb-2">
-              <Form.Label>Xuất xứ</Form.Label>
-              <Form.Control
-                value={formData.origin}
-                onChange={(e) =>
-                  setFormData({ ...formData, origin: e.target.value })
-                }
-              />
-            </Form.Group>
+          <Form.Item name="origin" label="Xuất xứ">
+            <Input />
+          </Form.Item>
 
-            <Form.Group className="mb-2">
-              <Form.Label>Mô tả</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={2}
-                value={formData.description}
-                onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
-                }
-              />
-            </Form.Group>
+          <Form.Item name="description" label="Mô tả">
+            <Input.TextArea rows={3} />
+          </Form.Item>
 
-            <Form.Group className="mb-3">
-              <Form.Label>Logo</Form.Label>
-              <Form.Control
-                type="file"
-                accept="image/*"
-                onChange={(e) =>
-                  setFormData({ ...formData, logo: e.target.files[0] })
-                }
-              />
-            </Form.Group>
+          <Form.Item name="status" label="Trạng thái" initialValue="active">
+            <Select>
+              <Select.Option value="active">Hoạt động</Select.Option>
+              <Select.Option value="inactive">Ngừng</Select.Option>
+            </Select>
+          </Form.Item>
 
-            <div className="text-end">
-              <Button type="submit" disabled={loadingSubmit}>
-                {loadingSubmit ? <Spinner size="sm" /> : "Lưu"}
-              </Button>
-            </div>
-          </Form>
-        </Modal.Body>
-      </Modal>
-
-      {/* DELETE MODAL */}
-      <Modal show={showDeleteModal} centered onHide={() => setShowDeleteModal(false)}>
-        <Modal.Header closeButton className="bg-danger text-white">
-          <Modal.Title>Xác nhận xóa</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          Bạn chắc chắn muốn xóa thương hiệu{" "}
-          <strong>{brandToDelete?.name}</strong>?
-          <div className="alert alert-warning mt-2 mb-0">
-            ⚠️ Hành động này không thể hoàn tác
-          </div>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
-            Hủy
-          </Button>
-          <Button variant="danger" onClick={confirmDelete} disabled={loadingDelete}>
-            {loadingDelete ? <Spinner size="sm" /> : "Xóa"}
-          </Button>
-        </Modal.Footer>
+          <Form.Item name="logo" label="Logo">
+            <Upload beforeUpload={() => false} listType="picture">
+              <Button icon={<UploadOutlined />}>Upload Logo</Button>
+            </Upload>
+          </Form.Item>
+        </Form>
       </Modal>
     </div>
   );

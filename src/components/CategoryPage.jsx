@@ -4,15 +4,18 @@ import {
   Button,
   Modal,
   Form,
-  InputGroup,
+  Input,
+  Select,
+  Upload,
+  Image,
   Row,
   Col,
-  Image,
   Pagination,
-  OverlayTrigger,
-  Tooltip,
-  Spinner,
-} from "react-bootstrap";
+  Spin,
+  Switch,
+  Space,
+} from "antd";
+import { UploadOutlined, EditOutlined, DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import toast from "react-hot-toast";
 import {
   getCategories1,
@@ -20,17 +23,19 @@ import {
   updateCategory,
   deleteCategory,
 } from "../api/categoryApi";
-import { MdAutoFixOff, MdDelete } from "react-icons/md";
+
+const { TextArea } = Input;
 
 const CategoryPage = () => {
-  const WEB_URL = "http://localhost:5000";
+  const WEB_URL = process.env.REACT_APP_WEB_URL;
+
   const [categories, setCategories] = useState([]);
 
   // Modal state
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState(null);
 
-  // Form data
+  // Form
   const [formData, setFormData] = useState({
     name: "",
     slug: "",
@@ -45,12 +50,11 @@ const CategoryPage = () => {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [currentPage, setCurrentPage] = useState(1);
 
-  // Loading state
-  const [loading, setLoading] = useState(false); // table loading
-  const [submitLoading, setSubmitLoading] = useState(false); // form submit loading
-  const [overlayLoading, setOverlayLoading] = useState(false); // full screen loading
+  // Loading
+  const [loading, setLoading] = useState(false);
+  const [submitLoading, setSubmitLoading] = useState(false);
+  const [overlayLoading, setOverlayLoading] = useState(false);
 
   // Delete modal
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -75,7 +79,6 @@ const CategoryPage = () => {
       const data = await getCategories1(page, 10, search);
       setCategories(data.data || []);
       setTotalPages(data.totalPages || 1);
-      setCurrentPage(data.currentPage || page);
     } catch {
       toast.error("Lỗi khi tải danh mục");
     } finally {
@@ -85,7 +88,6 @@ const CategoryPage = () => {
 
   useEffect(() => {
     loadCategories();
-    // eslint-disable-next-line
   }, [page, search]);
 
   // Open modal
@@ -114,7 +116,7 @@ const CategoryPage = () => {
     setShowModal(true);
   };
 
-  // Auto update slug
+  // Auto slug
   const handleNameChange = (value) => {
     const newSlug = slugify(value);
     setFormData((prev) => ({
@@ -125,8 +127,7 @@ const CategoryPage = () => {
   };
 
   // Submit
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     setSubmitLoading(true);
     setOverlayLoading(true);
 
@@ -157,11 +158,6 @@ const CategoryPage = () => {
   };
 
   // Delete
-  const handleDeleteClick = (item) => {
-    setDeleteItem(item);
-    setShowDeleteModal(true);
-  };
-
   const confirmDelete = async () => {
     try {
       await deleteCategory(deleteItem.id);
@@ -173,261 +169,191 @@ const CategoryPage = () => {
     }
   };
 
-  // Pagination items
-  const paginationItems = [];
-  for (let i = 1; i <= totalPages; i++) {
-    paginationItems.push(
-      <Pagination.Item
-        key={i}
-        active={i === currentPage}
-        onClick={() => {
-          setPage(i);
-          setCurrentPage(i);
-        }}
-      >
-        {i}
-      </Pagination.Item>
-    );
-  }
+  // Table columns
+  const columns = [
+    {
+      title: "#",
+      render: (_, __, index) => (page - 1) * 10 + index + 1,
+    },
+    {
+      title: "Ảnh",
+      dataIndex: "image",
+      render: (img) =>
+        img ? (
+          <Image
+            src={`${WEB_URL}/uploads/products/${img}`}
+            width={60}
+            height={60}
+            style={{ objectFit: "cover", borderRadius: 8 }}
+          />
+        ) : (
+          "—"
+        ),
+    },
+    { title: "Tên danh mục", dataIndex: "name" },
+    { title: "Slug", dataIndex: "slug" },
+    {
+      title: "Mô tả",
+      dataIndex: "description",
+      render: (text) => text?.slice(0, 50) + "...",
+    },
+    {
+      title: "Trạng thái",
+      dataIndex: "status",
+      render: (s) => (s === "active" ? "Đang hoạt động" : "Ngừng"),
+    },
+    {
+      title: "Thao tác",
+      render: (_, record) => (
+        <Space>
+          <Button
+            icon={<EditOutlined />}
+            type="primary"
+            ghost
+            onClick={() => handleShow(record)}
+          />
+          <Button
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() => {
+              setDeleteItem(record);
+              setShowDeleteModal(true);
+            }}
+          />
+        </Space>
+      ),
+    },
+  ];
 
   return (
-    <div className="p-3 position-relative">
-
-      {/* Full screen overlay loading */}
+    <div>
+      {/* Overlay loading */}
       {overlayLoading && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100vw",
-            height: "100vh",
-            background: "rgba(255,255,255,0.65)",
-            zIndex: 9999,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            backdropFilter: "blur(2px)",
-          }}
-        >
-          <Spinner animation="border" variant="primary" style={{ width: 70, height: 70 }} />
+        <div className="overlay-loading">
+          <Spin size="large" />
         </div>
       )}
 
-      <h4 className="mb-3">Quản lý danh mục</h4>
+      <h3>📂 Quản lý danh mục</h3>
 
-      <Row className="mb-3">
-        <Col md="auto">
-          <Button onClick={() => handleShow()}>+ Thêm danh mục</Button>
+      {/* Toolbar */}
+      <Row gutter={16} style={{ marginBottom: 16 }}>
+        <Col>
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => handleShow()}>
+            Thêm danh mục
+          </Button>
         </Col>
-        <Col md={4}>
-          <InputGroup>
-            <Form.Control
-              placeholder="Tìm kiếm danh mục..."
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(1);
-              }}
-            />
-          </InputGroup>
+        <Col span={6}>
+          <Input
+            placeholder="Tìm kiếm danh mục..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            allowClear
+          />
         </Col>
       </Row>
 
-      <Table bordered hover>
-        <thead>
-          <tr className="text-center">
-            <th>#</th>
-            <th>Ảnh</th>
-            <th>Tên danh mục</th>
-            <th>Slug</th>
-            <th>Mô tả</th>
-            <th>Trạng thái</th>
-            <th>Thao tác</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {loading ? (
-            <tr>
-              <td colSpan={7} className="text-center py-5">
-                <Spinner animation="border" variant="primary" style={{ width: 50, height: 50 }} />
-                <div className="mt-2">Đang tải dữ liệu...</div>
-              </td>
-            </tr>
-          ) : categories.length === 0 ? (
-            <tr>
-              <td colSpan={7} className="text-center py-4">Không có danh mục</td>
-            </tr>
-          ) : (
-            categories.map((c, i) => (
-              <tr key={c.id}>
-                <td>{(currentPage - 1) * 10 + i + 1}</td>
-                <td className="text-center">
-                  {c.image && (
-                    <Image
-                      src={`${WEB_URL}/uploads/products/${c.image}`}
-                      width="60"
-                      height="60"
-                      rounded
-                    />
-                  )}
-                </td>
-                <td>{c.name}</td>
-                <td>{c.slug}</td>
-                <td>{c.description?.slice(0, 50)}...</td>
-                <td>{c.status === "active" ? "Đang hoạt động" : "Ngừng hoạt động"}</td>
-                <td className="text-center">
-                  <OverlayTrigger placement="top" overlay={<Tooltip>Sửa</Tooltip>}>
-                    <Button
-                      variant="outline-success"
-                      size="sm"
-                      className="me-1"
-                      onClick={() => handleShow(c)}
-                    >
-                      <MdAutoFixOff />
-                    </Button>
-                  </OverlayTrigger>
-
-                  <OverlayTrigger placement="top" overlay={<Tooltip>Xóa</Tooltip>}>
-                    <Button
-                      variant="outline-danger"
-                      size="sm"
-                      onClick={() => handleDeleteClick(c)}
-                    >
-                      <MdDelete />
-                    </Button>
-                  </OverlayTrigger>
-                </td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </Table>
-
-      <div className="d-flex justify-content-end">
-        <Pagination>{paginationItems}</Pagination>
+      {/* Table */}
+      <div className="card-box">
+        {loading ? (
+          <div style={{ textAlign: "center", padding: 40 }}>
+            <Spin size="large" />
+          </div>
+        ) : (
+          <Table
+            columns={columns}
+            dataSource={categories}
+            rowKey="id"
+            pagination={false}
+          />
+        )}
       </div>
 
-      {/* Modal thêm/sửa */}
-      <Modal show={showModal} onHide={() => setShowModal(false)} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>{editItem ? "Sửa danh mục" : "Thêm danh mục"}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form onSubmit={handleSubmit}>
+      {/* Pagination */}
+      <div style={{ textAlign: "right", marginTop: 16 }}>
+        <Pagination
+          current={page}
+          total={totalPages * 10}
+          onChange={(p) => setPage(p)}
+        />
+      </div>
 
-            <Form.Group className="mb-3">
-              <Form.Label>Tên danh mục</Form.Label>
-              <Form.Control
-                value={formData.name}
-                onChange={(e) => handleNameChange(e.target.value)}
-                required
-              />
-            </Form.Group>
+      {/* Modal Add/Edit */}
+      <Modal
+        open={showModal}
+        onCancel={() => setShowModal(false)}
+        onOk={handleSubmit}
+        confirmLoading={submitLoading}
+        title={editItem ? "Sửa danh mục" : "Thêm danh mục"}
+      >
+        <Form layout="vertical">
+          <Form.Item label="Tên danh mục">
+            <Input value={formData.name} onChange={(e) => handleNameChange(e.target.value)} />
+          </Form.Item>
 
-            <Form.Group className="mb-3">
-              <Form.Check
-                type="checkbox"
-                label="Cho phép chỉnh slug thủ công"
-                checked={allowEditSlug}
-                onChange={(e) => {
-                  setAllowEditSlug(e.target.checked);
-                  if (!e.target.checked) {
-                    setFormData((prev) => ({ ...prev, slug: slugify(prev.name) }));
-                  }
-                }}
-              />
-              <Form.Label className="mt-2">Slug</Form.Label>
-              <Form.Control
-                value={formData.slug}
-                readOnly={!allowEditSlug}
-                onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                required
-              />
-            </Form.Group>
+          <Form.Item label="Cho phép chỉnh slug thủ công">
+            <Switch
+              checked={allowEditSlug}
+              onChange={(v) => {
+                setAllowEditSlug(v);
+                if (!v) setFormData((prev) => ({ ...prev, slug: slugify(prev.name) }));
+              }}
+            />
+          </Form.Item>
 
-            <Form.Group className="mb-3">
-              <Form.Label>Mô tả</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={2}
-                value={formData.description}
-                onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
-                }
-              />
-            </Form.Group>
+          <Form.Item label="Slug">
+            <Input
+              value={formData.slug}
+              readOnly={!allowEditSlug}
+              onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+            />
+          </Form.Item>
 
-            <Form.Group className="mb-3">
-              <Form.Label>Ảnh danh mục</Form.Label>
-              <Form.Control
-                type="file"
-                accept="image/*"
-                onChange={(e) =>
-                  setFormData({ ...formData, image: e.target.files[0] })
-                }
-              />
-            </Form.Group>
+          <Form.Item label="Mô tả">
+            <TextArea
+              rows={3}
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            />
+          </Form.Item>
 
-            <Form.Group className="mb-3">
-              <Form.Label>Trạng thái</Form.Label>
-              <Form.Select
-                value={formData.status}
-                onChange={(e) =>
-                  setFormData({ ...formData, status: e.target.value })
-                }
-              >
-                <option value="active">Đang hoạt động</option>
-                <option value="inactive">Ngừng hoạt động</option>
-              </Form.Select>
-            </Form.Group>
+          <Form.Item label="Ảnh danh mục">
+            <Upload
+              beforeUpload={(file) => {
+                setFormData({ ...formData, image: file });
+                return false;
+              }}
+              maxCount={1}
+            >
+              <Button icon={<UploadOutlined />}>Chọn ảnh</Button>
+            </Upload>
+          </Form.Item>
 
-            <div className="text-end">
-              <Button type="submit" variant="primary" disabled={submitLoading}>
-                {submitLoading ? (
-                  <>
-                    <Spinner animation="border" size="sm" className="me-2" />
-                    Đang xử lý...
-                  </>
-                ) : (
-                  editItem ? "Cập nhật" : "Thêm mới"
-                )}
-              </Button>
-            </div>
-
-          </Form>
-        </Modal.Body>
+          <Form.Item label="Trạng thái">
+            <Select
+              value={formData.status}
+              onChange={(v) => setFormData({ ...formData, status: v })}
+            >
+              <Select.Option value="active">Đang hoạt động</Select.Option>
+              <Select.Option value="inactive">Ngừng hoạt động</Select.Option>
+            </Select>
+          </Form.Item>
+        </Form>
       </Modal>
 
-      {/* Delete modal */}
-      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>Xác nhận xóa</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          {deleteItem ? (
-            <>
-              <p>
-                Bạn có chắc muốn xóa danh mục{" "}
-                <strong>{deleteItem.name}</strong> không?
-              </p>
-              <p className="text-danger small">Hành động này không thể hoàn tác.</p>
-            </>
-          ) : (
-            "Đang tải..."
-          )}
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
-            Hủy
-          </Button>
-          <Button variant="danger" onClick={confirmDelete}>
-            Xóa
-          </Button>
-        </Modal.Footer>
+      {/* Delete Modal */}
+      <Modal
+        open={showDeleteModal}
+        onCancel={() => setShowDeleteModal(false)}
+        onOk={confirmDelete}
+        okButtonProps={{ danger: true }}
+        title="Xác nhận xóa"
+      >
+        Bạn có chắc muốn xóa danh mục <b>{deleteItem?.name}</b> không?
       </Modal>
-
     </div>
   );
 };

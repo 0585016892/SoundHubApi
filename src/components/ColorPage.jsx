@@ -4,14 +4,16 @@ import {
   Button,
   Modal,
   Form,
-  FormControl,
+  Input,
   Row,
   Col,
   Pagination,
-  OverlayTrigger,
   Tooltip,
-  Spinner
-} from "react-bootstrap";
+  Spin,
+  ColorPicker,
+  Space,
+} from "antd";
+import { EditOutlined, DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import {
   getColors,
   createColor,
@@ -19,13 +21,12 @@ import {
   deleteColor,
 } from "../api/colorApi";
 import toast from "react-hot-toast";
-import { MdAutoFixOff, MdDelete } from "react-icons/md";
 
 const ColorPage = () => {
   const [colors, setColors] = useState([]);
-  const [loading, setLoading] = useState(false); // ⭐ loading danh sách
-  const [saving, setSaving] = useState(false);   // ⭐ loading khi lưu
-  const [deleting, setDeleting] = useState(false); // ⭐ loading khi xóa
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const [showModal, setShowModal] = useState(false);
   const [currentColor, setCurrentColor] = useState({ name: "", code: "#000000" });
@@ -40,15 +41,14 @@ const ColorPage = () => {
 
   const fetchColorsData = async () => {
     try {
-      setLoading(true); // ⭐ bật loading
+      setLoading(true);
       const res = await getColors({ page, limit, search });
-      const list = res?.data ?? [];
-      setColors(list);
+      setColors(res?.data ?? []);
       setTotalPages(res?.totalPages ?? 1);
     } catch (err) {
       console.error(err);
     } finally {
-      setLoading(false); // ⭐ tắt loading
+      setLoading(false);
     }
   };
 
@@ -58,7 +58,7 @@ const ColorPage = () => {
 
   const handleSave = async () => {
     try {
-      setSaving(true); // ⭐ bật loading nút Lưu
+      setSaving(true);
 
       if (currentColor.id) {
         await updateColor(currentColor.id, currentColor);
@@ -74,234 +74,198 @@ const ColorPage = () => {
     } catch (err) {
       console.error(err);
     } finally {
-      setSaving(false); // ⭐ tắt loading
+      setSaving(false);
     }
-  };
-
-  const confirmDelete = (color) => {
-    setColorToDelete(color);
-    setShowDeleteModal(true);
   };
 
   const handleDelete = async () => {
     if (!colorToDelete) return;
     try {
-      setDeleting(true); // ⭐ bật loading xóa
-
+      setDeleting(true);
       await deleteColor(colorToDelete.id);
       toast.success("Xóa màu thành công!");
-
       setShowDeleteModal(false);
       setColorToDelete(null);
       fetchColorsData();
     } catch (err) {
       console.error(err);
     } finally {
-      setDeleting(false); // ⭐ tắt loading
+      setDeleting(false);
     }
   };
 
-  const renderPagination = () => {
-    let items = [];
-    for (let number = 1; number <= totalPages; number++) {
-      items.push(
-        <Pagination.Item
-          key={number}
-          active={number === page}
-          onClick={() => setPage(number)}
-        >
-          {number}
-        </Pagination.Item>
-      );
-    }
-    return (
-      <Pagination>
-        <Pagination.Prev onClick={() => page > 1 && setPage(page - 1)} />
-        {items}
-        <Pagination.Next onClick={() => page < totalPages && setPage(page + 1)} />
-      </Pagination>
-    );
-  };
+  // ✅ Antd Table columns
+  const columns = [
+    {
+      title: "ID",
+      dataIndex: "id",
+      render: (id) => `C2003${id}`,
+    },
+    {
+      title: "Tên màu",
+      dataIndex: "name",
+    },
+    {
+      title: "Mã màu",
+      dataIndex: "code",
+      render: (code) => (
+        <Space>
+          <div
+            style={{
+              width: 40,
+              height: 18,
+              background: code,
+              borderRadius: 4,
+              border: "1px solid #ccc",
+            }}
+          />
+          {code}
+        </Space>
+      ),
+    },
+    {
+      title: "Hành động",
+      render: (_, record) => (
+        <Space>
+          <Tooltip title="Sửa màu">
+            <Button
+              type="primary"
+              ghost
+              icon={<EditOutlined />}
+              onClick={() => {
+                setCurrentColor(record);
+                setShowModal(true);
+              }}
+            />
+          </Tooltip>
+
+          <Tooltip title="Xóa màu">
+            <Button
+              danger
+              icon={<DeleteOutlined />}
+              onClick={() => {
+                setColorToDelete(record);
+                setShowDeleteModal(true);
+              }}
+            />
+          </Tooltip>
+        </Space>
+      ),
+    },
+  ];
 
   return (
-    <div className="p-3">
-      <h4 className="mb-3">Quản lý màu</h4>
+    <div>
+      <h3 style={{ marginBottom: 16 }}>🎨 Quản lý màu</h3>
 
       {/* SEARCH + ADD */}
-      <Row className="mb-3">
-        <Col md="auto">
+      <Row gutter={16} style={{ marginBottom: 16 }}>
+        <Col>
           <Button
+            type="primary"
+            icon={<PlusOutlined />}
             onClick={() => {
               setCurrentColor({ name: "", code: "#000000" });
               setShowModal(true);
             }}
           >
-            + Thêm màu
+            Thêm màu
           </Button>
         </Col>
-        <Col md={4}>
-          <FormControl
+
+        <Col span={6}>
+          <Input
             placeholder="Tìm kiếm màu hoặc mã màu..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            allowClear
           />
         </Col>
       </Row>
 
-      {/* ⭐ LOADING TABLE */}
-      {loading ? (
-        <div className="text-center py-5">
-          <Spinner animation="border" variant="primary" />
-          <div className="mt-2">Đang tải dữ liệu...</div>
-        </div>
-      ) : (
-        <Table bordered hover>
-          <thead className="text-center">
-            <tr>
-              <th>ID</th>
-              <th>Tên màu</th>
-              <th>Mã màu</th>
-              <th>Hành động</th>
-            </tr>
-          </thead>
-          <tbody>
-            {colors.map((c) => (
-              <tr key={c.id}>
-                <td>{`C2003${c.id}`}</td>
-                <td>{c.name}</td>
-                <td>
-                  <div
-                    style={{
-                      display: "inline-block",
-                      background: c.code,
-                      width: "50px",
-                      height: "20px",
-                      marginRight: "10px",
-                      border: "1px solid #ccc",
-                    }}
-                  ></div>
-                  {c.code}
-                </td>
-                <td className="d-flex justify-content-center gap-3">
-                  <OverlayTrigger
-                    placement="top"
-                    overlay={<Tooltip>Sửa màu</Tooltip>}
-                  >
-                    <Button
-                      variant="outline-success"
-                      size="sm"
-                      className="me-1"
-                      onClick={() => {
-                        setCurrentColor(c);
-                        setShowModal(true);
-                      }}
-                    >
-                      <MdAutoFixOff />
-                    </Button>
-                  </OverlayTrigger>
+      {/* TABLE */}
+      <CardWrap>
+        {loading ? (
+          <div style={{ textAlign: "center", padding: 50 }}>
+            <Spin size="large" />
+            <div>Đang tải dữ liệu...</div>
+          </div>
+        ) : (
+          <Table
+            columns={columns}
+            dataSource={colors}
+            rowKey="id"
+            pagination={false}
+          />
+        )}
+      </CardWrap>
 
-                  <OverlayTrigger
-                    placement="top"
-                    overlay={<Tooltip>Xóa màu</Tooltip>}
-                  >
-                    <Button
-                      variant="outline-danger"
-                      size="sm"
-                      className="me-1"
-                      onClick={() => confirmDelete(c)}
-                    >
-                      <MdDelete />
-                    </Button>
-                  </OverlayTrigger>
-                </td>
-              </tr>
-            ))}
-            {colors.length === 0 && (
-              <tr>
-                <td colSpan={4} className="text-center">
-                  Không có màu nào
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </Table>
-      )}
+      {/* Pagination */}
+      <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 16 }}>
+        <Pagination
+          current={page}
+          total={totalPages * 10}
+          onChange={(p) => setPage(p)}
+        />
+      </div>
 
-      <div className="d-flex justify-content-end">{renderPagination()}</div>
+      {/* Modal Add/Edit */}
+      <Modal
+        open={showModal}
+        onCancel={() => setShowModal(false)}
+        title={currentColor.id ? "Sửa màu" : "Thêm màu"}
+        onOk={handleSave}
+        confirmLoading={saving}
+      >
+        <Form layout="vertical">
+          <Form.Item label="Tên màu">
+            <Input
+              value={currentColor.name}
+              onChange={(e) =>
+                setCurrentColor({ ...currentColor, name: e.target.value })
+              }
+            />
+          </Form.Item>
 
-      {/* Modal thêm/sửa */}
-      <Modal show={showModal} onHide={() => setShowModal(false)} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>{currentColor.id ? "Sửa màu" : "Thêm màu"}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form>
-            <Form.Group className="mb-3">
-              <Form.Label>Tên màu</Form.Label>
-              <Form.Control
-                value={currentColor.name}
-                onChange={(e) =>
-                  setCurrentColor({ ...currentColor, name: e.target.value })
-                }
-              />
-            </Form.Group>
-
-            <Form.Group>
-              <Form.Label>Mã màu</Form.Label>
-              <Form.Control
-                type="color"
-                value={currentColor.code}
-                onChange={(e) =>
-                  setCurrentColor({ ...currentColor, code: e.target.value })
-                }
-              />
-            </Form.Group>
-          </Form>
-        </Modal.Body>
-
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)}>
-            Hủy
-          </Button>
-          <Button onClick={handleSave} disabled={saving}>
-            {saving ? (
-              <>
-                <Spinner animation="border" size="sm" /> Đang lưu...
-              </>
-            ) : currentColor.id ? (
-              "Cập nhật"
-            ) : (
-              "Thêm"
-            )}
-          </Button>
-        </Modal.Footer>
+          <Form.Item label="Mã màu">
+            <ColorPicker
+              value={currentColor.code}
+              onChange={(color) =>
+                setCurrentColor({ ...currentColor, code: color.toHexString() })
+              }
+              showText
+            />
+          </Form.Item>
+        </Form>
       </Modal>
 
-      {/* Modal xác nhận xóa */}
-      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>Xác nhận xóa</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          Bạn có chắc muốn xóa màu <strong>{colorToDelete?.name}</strong> không?
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
-            Hủy
-          </Button>
-          <Button variant="danger" onClick={handleDelete} disabled={deleting}>
-            {deleting ? (
-              <>
-                <Spinner animation="border" size="sm" /> Đang xóa...
-              </>
-            ) : (
-              "Xóa"
-            )}
-          </Button>
-        </Modal.Footer>
+      {/* Modal Delete */}
+      <Modal
+        open={showDeleteModal}
+        onCancel={() => setShowDeleteModal(false)}
+        onOk={handleDelete}
+        confirmLoading={deleting}
+        okButtonProps={{ danger: true }}
+        title="Xác nhận xóa"
+      >
+        Bạn có chắc muốn xóa màu <b>{colorToDelete?.name}</b> không?
       </Modal>
     </div>
   );
 };
 
 export default ColorPage;
+
+// Wrapper card style
+const CardWrap = ({ children }) => (
+  <div
+    style={{
+      background: "#fff",
+      padding: 16,
+      borderRadius: 12,
+      boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
+    }}
+  >
+    {children}
+  </div>
+);

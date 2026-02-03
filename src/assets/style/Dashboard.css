@@ -1,32 +1,52 @@
-/* src/assets/dashboard.css */
-.dashboard-page h3 {
-  color: #333;
+.card-box {
+  background: white;
+  padding: 16px;
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
 }
 
-.hover-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+.overlay-loading {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(255,255,255,0.6);
+  backdrop-filter: blur(2px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+.ant-card {
+  border-radius: 16px !important;
 }
 
-.table-dashboard th {
-  font-weight: 600;
-  color: #555;
+.ant-table {
+  border-radius: 12px !important;
 }
 
-.table-dashboard td {
-  vertical-align: middle;
+.ant-modal-content {
+  border-radius: 18px !important;
 }
 
-.table-dashboard tr:hover {
-  background-color: #f9f9f9;
+.ant-btn {
+  border-radius: 8px !important;
 }
 
-.header-icon {
-  cursor: pointer;
-  color: #555;
-  transition: color 0.2s;
+.ant-input,
+.ant-select-selector  {
+  border-radius: 999px !important;
+}
+.ant-modal-content {
+  border-radius: 20px !important;
 }
 
-.header-icon:hover {
-  color: #007bff;
+.ant-card {
+  border-radius: 16px !important;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.05);
+}
+
+.ant-table {
+  border-radius: 12px !important;
 }

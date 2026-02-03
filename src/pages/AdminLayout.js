@@ -5,7 +5,7 @@ import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 
 const AdminLayout = () => {
-  const sidebarWidth = 240; // tương ứng var(--sidebar-width-open)
+  const sidebarWidth = 0; // tương ứng var(--sidebar-width-open)
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
       <Sidebar />

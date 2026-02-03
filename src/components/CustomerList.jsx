@@ -3,31 +3,36 @@ import {
   Table,
   Button,
   Modal,
-  Form,
-  Spinner,
-  InputGroup,
-  OverlayTrigger,
-  Tooltip
-} from "react-bootstrap";
+  Input,
+  Tag,
+  Space,
+  Select,
+  Spin,
+  Descriptions,
+  List,
+  Card,
+  message,
+} from "antd";
+import {
+  EyeOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  SearchOutlined,
+} from "@ant-design/icons";
+
 import {
   getCustomers,
   deleteCustomer,
   updateCustomerStatus,
-  getCustomerById
+  getCustomerById,
 } from "../api/customerApi";
-import {
-  MdAutoFixOff,
-  MdRemoveRedEye,
-  MdDelete
-} from "react-icons/md";
-import toast from "react-hot-toast";
 
 const CustomerList = () => {
   const [customers, setCustomers] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [openDelete, setOpenDelete] = useState(false);
+  const [openDetail, setOpenDetail] = useState(false);
 
   const [customerToDelete, setCustomerToDelete] = useState(null);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
@@ -49,10 +54,9 @@ const CustomerList = () => {
       );
       setCustomers(filtered);
     } catch {
-      toast.error("Lỗi tải danh sách khách hàng");
-    } finally {
-      setLoading(false);
+      message.error("Lỗi tải khách hàng");
     }
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -63,304 +67,246 @@ const CustomerList = () => {
   const handleStatusChange = async (id, status) => {
     try {
       await updateCustomerStatus(id, status);
-      toast.success("Cập nhật trạng thái thành công");
+      message.success("Cập nhật trạng thái thành công");
       setCustomers((prev) =>
         prev.map((c) => (c.id === id ? { ...c, status } : c))
       );
     } catch {
-      toast.error("Không thể cập nhật trạng thái");
+      message.error("Không thể cập nhật trạng thái");
     }
   };
 
   /* ================= DELETE ================= */
-  const handleDeleteClick = (customer) => {
-    setCustomerToDelete(customer);
-    setShowDeleteModal(true);
-  };
-
   const confirmDelete = async () => {
     try {
       await deleteCustomer(customerToDelete.id);
-      toast.success("Xóa khách hàng thành công");
+      message.success("Xóa thành công");
       setCustomers(customers.filter((c) => c.id !== customerToDelete.id));
-      setShowDeleteModal(false);
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Xóa thất bại");
+      setOpenDelete(false);
+    } catch {
+      message.error("Xóa thất bại");
     }
   };
 
   /* ================= DETAIL ================= */
-  const handleViewDetail = async (id) => {
+  const viewDetail = async (id) => {
     try {
       const data = await getCustomerById(id);
       setSelectedCustomer(data);
-      setShowDetailModal(true);
+      setOpenDetail(true);
     } catch {
-      toast.error("Không thể lấy chi tiết khách hàng");
+      message.error("Không lấy được chi tiết khách hàng");
     }
   };
 
-  /* ================= EDIT (MOCK) ================= */
-  const handleEdit = (customer) => {
-    toast.success(`Chức năng sửa "${customer.full_name}" đang phát triển`);
-  };
+  /* ================= TABLE ================= */
+  const columns = [
+    {
+      title: "#",
+      width: 60,
+      render: (_, __, i) => (page - 1) * 20 + i + 1,
+    },
+    {
+      title: "Khách hàng",
+      dataIndex: "full_name",
+      render: (t) => <b style={{ fontSize: 15 }}>{t}</b>,
+    },
+    {
+      title: "Email",
+      dataIndex: "email",
+    },
+    {
+      title: "Điện thoại",
+      dataIndex: "phone",
+      render: (t) => t || "—",
+    },
+    {
+      title: "Địa chỉ",
+      dataIndex: "address",
+      render: (t) => <span style={{ color: "#666" }}>{t || "—"}</span>,
+    },
+    {
+      title: "Trạng thái",
+      dataIndex: "status",
+      render: (s, record) => (
+        <Select
+          value={s}
+          size="small"
+          style={{ width: 150 }}
+          onChange={(v) => handleStatusChange(record.id, v)}
+        >
+          <Select.Option value="active">Hoạt động</Select.Option>
+          <Select.Option value="inactive">Không hoạt động</Select.Option>
+        </Select>
+      ),
+    },
+    {
+      title: "Hành động",
+      align: "center",
+      render: (_, record) => (
+        <Space>
+          <Button shape="circle" icon={<EyeOutlined />} onClick={() => viewDetail(record.id)} />
+          <Button shape="circle" icon={<EditOutlined />} />
+          <Button
+            danger
+            shape="circle"
+            icon={<DeleteOutlined />}
+            onClick={() => {
+              setCustomerToDelete(record);
+              setOpenDelete(true);
+            }}
+          />
+        </Space>
+      ),
+    },
+  ];
 
-  /* ================= RENDER ================= */
   return (
-    <div className="container-fluid mt-4">
-      {/* HEADER */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <div>
-          <h3 className="fw-bold mb-1">👥 Quản lý khách hàng</h3>
-          <small className="text-muted">
-            Theo dõi thông tin & lịch sử mua hàng
-          </small>
-        </div>
+    <div style={{ padding: 24, background: "#f5f7fa", minHeight: "100vh" }}>
+      <Card
+        style={{
+          borderRadius: 20,
+          boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
+          border: "none",
+        }}
+      >
+        {/* HEADER */}
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20 }}>
+          <div>
+            <h2 style={{ margin: 0 }}>👥 Quản lý khách hàng</h2>
+            <span style={{ color: "#888" }}>
+              Theo dõi thông tin và lịch sử mua hàng
+            </span>
+          </div>
 
-        <InputGroup style={{ maxWidth: 320 }}>
-          <InputGroup.Text>🔍</InputGroup.Text>
-          <Form.Control
-            placeholder="Tìm theo tên hoặc email"
-            value={search}
+          <Input
+            prefix={<SearchOutlined />}
+            placeholder="Tìm tên hoặc email..."
+            style={{
+              width: 280,
+              borderRadius: 30,
+              padding: "6px 16px",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+            }}
             onChange={(e) => setSearch(e.target.value)}
           />
-        </InputGroup>
-      </div>
-
-      {/* TABLE */}
-      <div className="card shadow-sm border-0">
-        <div className="card-body p-0">
-          {loading ? (
-            <div className="text-center py-5">
-              <Spinner animation="border" />
-            </div>
-          ) : (
-            <Table hover responsive className="mb-0 align-middle">
-              <thead className="table-light">
-                <tr>
-                  <th>#</th>
-                  <th>Khách hàng</th>
-                  <th>Email</th>
-                  <th>Điện thoại</th>
-                  <th>Địa chỉ</th>
-                  <th>Trạng thái</th>
-                  <th className="text-center">Hành động</th>
-                </tr>
-              </thead>
-              <tbody>
-                {customers.length > 0 ? (
-                  customers.map((c, index) => (
-                    <tr key={c.id}>
-                      <td>{index + 1}</td>
-
-                      <td>
-                        <div className="fw-semibold">{c.full_name}</div>
-                      </td>
-
-                      <td>{c.email}</td>
-                      <td>{c.phone || "—"}</td>
-                      <td className="text-truncate" style={{ maxWidth: 200 }}>
-                        {c.address || "—"}
-                      </td>
-
-                      <td>
-                        <Form.Select
-                          size="sm"
-                          value={c.status}
-                          className={`fw-semibold ${
-                            c.status === "active"
-                              ? "text-success"
-                              : "text-secondary"
-                          }`}
-                          onChange={(e) =>
-                            handleStatusChange(c.id, e.target.value)
-                          }
-                        >
-                          <option value="active">Hoạt động</option>
-                          <option value="inactive">Không hoạt động</option>
-                        </Form.Select>
-                      </td>
-
-                      <td className="text-center">
-                        <OverlayTrigger overlay={<Tooltip>Xem chi tiết</Tooltip>}>
-                          <Button
-                            size="sm"
-                            variant="light"
-                            className="me-1 border"
-                            onClick={() => handleViewDetail(c.id)}
-                          >
-                            <MdRemoveRedEye />
-                          </Button>
-                        </OverlayTrigger>
-
-                        <OverlayTrigger overlay={<Tooltip>Sửa</Tooltip>}>
-                          <Button
-                            size="sm"
-                            variant="light"
-                            className="me-1 border"
-                            onClick={() => handleEdit(c)}
-                          >
-                            <MdAutoFixOff />
-                          </Button>
-                        </OverlayTrigger>
-
-                        <OverlayTrigger overlay={<Tooltip>Xóa</Tooltip>}>
-                          <Button
-                            size="sm"
-                            variant="light"
-                            className="border text-danger"
-                            onClick={() => handleDeleteClick(c)}
-                          >
-                            <MdDelete />
-                          </Button>
-                        </OverlayTrigger>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={7} className="text-center py-4 text-muted">
-                      Không có khách hàng nào
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </Table>
-          )}
         </div>
-      </div>
+
+        {/* TABLE */}
+        <Table
+          columns={columns}
+          dataSource={customers}
+          rowKey="id"
+          loading={loading}
+          pagination={false}
+          bordered={false}
+          style={{ borderRadius: 12, overflow: "hidden" }}
+        />
+      </Card>
 
       {/* DELETE MODAL */}
-      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
-        <Modal.Header closeButton className="bg-danger text-white">
-          <Modal.Title>Xác nhận xóa khách hàng</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          ⚠️ Hành động này không thể hoàn tác
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
-            Hủy
-          </Button>
-          <Button variant="danger" onClick={confirmDelete}>
-            Xóa
-          </Button>
-        </Modal.Footer>
+      <Modal
+        open={openDelete}
+        onCancel={() => setOpenDelete(false)}
+        onOk={confirmDelete}
+        okText="Xóa"
+        okButtonProps={{ danger: true }}
+        title="⚠️ Xác nhận xóa khách hàng"
+      >
+        Hành động này không thể hoàn tác!
       </Modal>
 
       {/* DETAIL MODAL */}
-      <Modal show={showDetailModal} onHide={() => setShowDetailModal(false)} centered size="lg">
-        <Modal.Header closeButton className="bg-primary text-white">
-          <Modal.Title>📋 Chi tiết khách hàng</Modal.Title>
-        </Modal.Header>
-
-        <Modal.Body>
-          {!selectedCustomer ? (
-            <div className="text-center py-4">
-              <Spinner animation="border" />
-            </div>
-          ) : (
-            <>
-              {/* INFO */}
-              <div className="row g-3 mb-4">
-                <div className="col-md-6">
-                  <div className="border rounded p-3 bg-light h-100">
-                    <h6 className="fw-bold text-primary mb-3">👤 Cá nhân</h6>
-                    <p><strong>Họ tên:</strong> {selectedCustomer.full_name}</p>
-                    <p><strong>Email:</strong> {selectedCustomer.email}</p>
-                    <p><strong>Điện thoại:</strong> {selectedCustomer.phone || "—"}</p>
-                  </div>
-                </div>
-
-                <div className="col-md-6">
-                  <div className="border rounded p-3 bg-light h-100">
-                    <h6 className="fw-bold text-primary mb-3">📌 Trạng thái</h6>
-                    <p><strong>Địa chỉ:</strong> {selectedCustomer.address || "—"}</p>
-                    <p>
-                      <strong>Ngày tạo:</strong>{" "}
-                      {new Date(selectedCustomer.created_at).toLocaleDateString()}
-                    </p>
-                    <span
-                      className={`badge px-3 py-2 ${
-                        selectedCustomer.status === "active"
-                          ? "bg-success"
-                          : "bg-secondary"
-                      }`}
-                    >
-                      {selectedCustomer.status === "active"
-                        ? "Hoạt động"
-                        : "Không hoạt động"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* ORDERS SCROLL */}
-              <h6 className="fw-bold text-primary mb-3">🧾 Lịch sử mua hàng</h6>
-
-              <div style={{ maxHeight: "45vh", overflowY: "auto", paddingRight: 6 }}>
-                {selectedCustomer.orders?.length > 0 ? (
-                  selectedCustomer.orders.map((order) => (
-                    <div key={order.order_id} className="card mb-3 shadow-sm">
-                      <div className="card-body">
-                        <div className="d-flex justify-content-between mb-2">
-                          <strong className="text-primary">
-                            Đơn #{order.order_id}
-                          </strong>
-                          <span
-                            className={`badge ${
-                              order.status === "completed"
-                                ? "bg-success"
-                                : order.status === "pending"
-                                ? "bg-warning text-dark"
-                                : "bg-secondary"
-                            }`}
-                          >
-                            {order.status}
-                          </span>
-                        </div>
-
-                        <p className="mb-1">
-                          🗓 {new Date(order.order_date).toLocaleString()}
-                        </p>
-
-                        <p className="fw-bold text-danger">
-                          💰 {Number(order.total_amount).toLocaleString()}₫
-                        </p>
-
-                        <ul className="list-group list-group-flush">
-                          {order.items.map((item, i) => (
-                            <li
-                              key={i}
-                              className="list-group-item d-flex justify-content-between"
-                            >
-                              <span>
-                                {item.product_name} x{item.quantity}
-                              </span>
-                              <span>
-                                {Number(item.price).toLocaleString()}₫
-                              </span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
-                  ))
+      <Modal
+        open={openDetail}
+        onCancel={() => setOpenDetail(false)}
+        footer={null}
+        width={1000}
+        style={{ top: 20 }}
+        title={<b>📋 Chi tiết khách hàng</b>}
+      >
+        {!selectedCustomer ? (
+          <Spin />
+        ) : (
+          <>
+            <Descriptions bordered column={2} size="small">
+              <Descriptions.Item label="Họ tên">
+                {selectedCustomer.full_name}
+              </Descriptions.Item>
+              <Descriptions.Item label="Email">
+                {selectedCustomer.email}
+              </Descriptions.Item>
+              <Descriptions.Item label="Điện thoại">
+                {selectedCustomer.phone || "—"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Địa chỉ">
+                {selectedCustomer.address || "—"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Ngày tạo">
+                {new Date(selectedCustomer.created_at).toLocaleDateString()}
+              </Descriptions.Item>
+              <Descriptions.Item label="Trạng thái">
+                {selectedCustomer.status === "active" ? (
+                  <Tag color="green">Hoạt động</Tag>
                 ) : (
-                  <p className="text-muted fst-italic">
-                    Khách hàng chưa có đơn hàng nào.
-                  </p>
+                  <Tag color="red">Không hoạt động</Tag>
                 )}
-              </div>
-            </>
-          )}
-        </Modal.Body>
+              </Descriptions.Item>
+            </Descriptions>
 
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDetailModal(false)}>
-            Đóng
-          </Button>
-        </Modal.Footer>
+            {/* ORDERS */}
+            <h3 style={{ marginTop: 20 }}>🧾 Lịch sử mua hàng</h3>
+
+            <div style={{ maxHeight: 400, overflowY: "auto" }}>
+              {selectedCustomer.orders?.length > 0 ? (
+                selectedCustomer.orders.map((order) => (
+                  <Card
+                    key={order.order_id}
+                    style={{
+                      marginBottom: 12,
+                      borderRadius: 16,
+                      boxShadow: "0 6px 16px rgba(0,0,0,0.06)",
+                      border: "none",
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                      <b>Đơn #{order.order_id}</b>
+                      <Tag
+                        color={
+                          order.status === "completed"
+                            ? "green"
+                            : order.status === "pending"
+                            ? "orange"
+                            : "default"
+                        }
+                      >
+                        {order.status}
+                      </Tag>
+                    </div>
+
+                    <p>🗓 {new Date(order.order_date).toLocaleString()}</p>
+                    <p style={{ color: "red", fontWeight: "bold" }}>
+                      💰 {Number(order.total_amount).toLocaleString()}₫
+                    </p>
+
+                    <List
+                      size="small"
+                      dataSource={order.items}
+                      renderItem={(item) => (
+                        <List.Item>
+                          {item.product_name} x{item.quantity} —{" "}
+                          {Number(item.price).toLocaleString()}₫
+                        </List.Item>
+                      )}
+                    />
+                  </Card>
+                ))
+              ) : (
+                <p style={{ color: "#999" }}>Khách hàng chưa có đơn hàng nào.</p>
+              )}
+            </div>
+          </>
+        )}
       </Modal>
     </div>
   );

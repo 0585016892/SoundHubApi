@@ -1,34 +1,36 @@
 import React, { useState, useEffect, useRef, useContext } from "react";
-import { Card, ListGroup, InputGroup, Form, Button, Badge, Image } from "react-bootstrap";
+import { Layout, List, Avatar, Badge, Input, Button, Card, Typography } from "antd";
+import { SendOutlined, UserOutlined } from "@ant-design/icons";
 import socket from "../utils/socket";
 import { UserContext } from "../context/UserContext";
+
+const { Sider, Content } = Layout;
+const { Text } = Typography;
 
 const AdminChat = () => {
   const API_URL = process.env.REACT_APP_API_URL;
   const { user } = useContext(UserContext);
-  const [users, setUsers] = useState([]); // danh sách khách từ DB
+
+  const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [allMessages, setAllMessages] = useState({}); // lưu tất cả tin nhắn theo userId
-  const [messages, setMessages] = useState([]); // tin nhắn của user đang chọn
-  const [notifications, setNotifications] = useState({}); // badge tin nhắn mới
+  const [allMessages, setAllMessages] = useState({});
+  const [messages, setMessages] = useState([]);
+  const [notifications, setNotifications] = useState({});
   const [input, setInput] = useState("");
   const messagesEndRef = useRef(null);
 
-  // Kết nối socket khi user có thông tin
+  // SOCKET CONNECT
   useEffect(() => {
     if (!user) return;
 
     socket.connect();
     socket.emit("join", { userId: user.id, isAdmin: true });
 
-    // Lấy danh sách khách hàng online từ server
     socket.on("updateOnlineUsers", (onlineCustomers) => {
-      // onlineCustomers: mảng {id, full_name}
       setUsers(onlineCustomers);
     });
 
-    // Nhận tin nhắn realtime
-    socket.on("receiveMessage", ({ fromUserId, message, isAdminSender }) => {
+    socket.on("receiveMessage", ({ fromUserId, message }) => {
       setAllMessages(prev => ({
         ...prev,
         [fromUserId]: [...(prev[fromUserId] || []), { from: "user", text: message }]
@@ -42,35 +44,31 @@ const AdminChat = () => {
     });
 
     return () => {
-      socket.off("updateOnlineUsers");
-      socket.off("receiveMessage");
       socket.disconnect();
     };
   }, [user, selectedUser]);
 
-  // Khi chọn khách
+  // LOAD CHAT HISTORY
   const handleSelectUser = async (userId) => {
     setSelectedUser(userId);
     setNotifications(prev => ({ ...prev, [userId]: 0 }));
 
-    // Nếu đã có tin nhắn trong state
     if (allMessages[userId]) {
       setMessages(allMessages[userId]);
-    } else {
-      // Lấy lịch sử chat từ server
-      try {
-        const res = await fetch(`${API_URL}/chat/history/${userId}`);
-        const data = await res.json(); // [{from: "admin"|"user", text: "..."}]
-        setMessages(data);
-        setAllMessages(prev => ({ ...prev, [userId]: data }));
-      } catch (err) {
-        console.error("Không tải được lịch sử chat", err);
-        setMessages([]);
-      }
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_URL}/chat/history/${userId}`);
+      const data = await res.json();
+      setMessages(data);
+      setAllMessages(prev => ({ ...prev, [userId]: data }));
+    } catch {
+      setMessages([]);
     }
   };
 
-  // Gửi tin nhắn
+  // SEND MESSAGE
   const handleSend = () => {
     if (!input || !selectedUser) return;
 
@@ -81,85 +79,96 @@ const AdminChat = () => {
       isAdminSender: true,
     });
 
-    const newMessage = { from: "admin", text: input };
-    setMessages(prev => [...prev, newMessage]);
+    const newMsg = { from: "admin", text: input };
+    setMessages(prev => [...prev, newMsg]);
     setAllMessages(prev => ({
       ...prev,
-      [selectedUser]: [...(prev[selectedUser] || []), newMessage]
+      [selectedUser]: [...(prev[selectedUser] || []), newMsg]
     }));
+
     setInput("");
   };
 
-  // Scroll xuống cuối khi có tin nhắn mới
+  // AUTO SCROLL
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   return (
-    <Card style={{ height: "85vh", borderRadius: "15px", display: "flex", flexDirection: "column" }} className="m-3 shadow">
-      <div className="d-flex h-100">
-        {/* Danh sách khách */}
-        <ListGroup style={{ width: "250px", borderRight: "1px solid #ddd", overflowY: "auto" }}>
-          {users.length > 0 ? users.map(u => (
-            <ListGroup.Item
-              key={u.id}
-              action
-              active={selectedUser === u.id}
+    <Layout style={{ height: "90vh", borderRadius: 12, overflow: "hidden", boxShadow: "0 5px 20px rgba(0,0,0,0.1)" }}>
+
+      {/* SIDEBAR USERS */}
+      <Sider width={280} theme="light" style={{ borderRight: "1px solid #eee" }}>
+        <div style={{ padding: 15, fontWeight: 600, fontSize: 16 }}>👥 Khách hàng Online</div>
+
+        <List
+          dataSource={users}
+          renderItem={(u) => (
+            <List.Item
               onClick={() => handleSelectUser(u.id)}
-              className="d-flex justify-content-between align-items-center"
+              style={{
+                cursor: "pointer",
+                background: selectedUser === u.id ? "#e6f4ff" : "transparent",
+                padding: 12
+              }}
             >
-              <div className="d-flex align-items-center">
-                <Image src="https://img.icons8.com/ios-filled/50/user-male-circle.png" roundedCircle style={{ width: 28, height: 28, marginRight: 8 }} />
-                {u.full_name}
-              </div>
-              {notifications[u.id] > 0 && selectedUser !== u.id && (
-                <Badge bg="danger" pill>{notifications[u.id]}</Badge>
-              )}
-            </ListGroup.Item>
-          )) : (
-            <ListGroup.Item className="text-muted">Không có khách hàng online</ListGroup.Item>
-          )}
-        </ListGroup>
-
-        {/* Chat box */}
-        <div className="flex-grow-1 d-flex flex-column">
-          <div className="flex-grow-1 p-3" style={{ overflowY: "auto", backgroundColor: "#f8f9fa" }}>
-            {selectedUser ? (
-              messages.map((m, i) => (
-                <div key={i} className={`d-flex mb-2 justify-content-${m.from === "admin" ? "end" : "start"}`}>
-                  {m.from === "user" && <Image src="https://img.icons8.com/ios-filled/50/user-male-circle.png" roundedCircle style={{ width: 28, height: 28, marginRight: 8 }} />}
-                  <div className={`p-2 rounded shadow-sm`} style={{
-                    maxWidth: "70%",
-                    backgroundColor: m.from === "admin" ? "#6f42c1" : "#e9ecef",
-                    color: m.from === "admin" ? "#fff" : "#000",
-                    borderRadius: m.from === "admin" ? "15px 15px 0 15px" : "15px 15px 15px 0"
-                  }}>
-                    {m.text}
-                  </div>
-                  {m.from === "admin" && <Image src="https://img.icons8.com/color/48/admin-settings-male.png" roundedCircle style={{ width: 28, height: 28, marginLeft: 8 }} />}
-                </div>
-              ))
-            ) : (
-              <p className="text-muted text-center mt-3">Chọn khách hàng để bắt đầu trò chuyện</p>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
-
-          {selectedUser && (
-            <InputGroup className="p-2 border-top">
-              <Form.Control
-                placeholder="Nhập tin nhắn..."
-                value={input}
-                onChange={e => setInput(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && handleSend()}
-                style={{ borderRadius: "20px" }}
+              <List.Item.Meta
+                avatar={
+                  <Badge count={notifications[u.id]}>
+                    <Avatar icon={<UserOutlined />} />
+                  </Badge>
+                }
+                title={<b>{u.full_name}</b>}
               />
-              <Button variant="primary" onClick={handleSend} style={{ borderRadius: "20px", marginLeft: "5px" }}>Gửi</Button>
-            </InputGroup>
+            </List.Item>
           )}
+        />
+      </Sider>
+
+      {/* CHAT CONTENT */}
+      <Content style={{ display: "flex", flexDirection: "column", background: "#f5f7fa" }}>
+        
+        {/* MESSAGE AREA */}
+        <div style={{ flex: 1, padding: 15, overflowY: "auto" }}>
+          {!selectedUser && (
+            <Text type="secondary">👉 Chọn khách hàng để bắt đầu chat</Text>
+          )}
+
+          {messages.map((m, i) => (
+            <div key={i} style={{ display: "flex", justifyContent: m.from === "admin" ? "flex-end" : "flex-start", marginBottom: 8 }}>
+              <Card
+                size="small"
+                style={{
+                  maxWidth: "60%",
+                  background: m.from === "admin" ? "#1677ff" : "#fff",
+                  color: m.from === "admin" ? "#fff" : "#000",
+                  borderRadius: m.from === "admin" ? "16px 16px 0 16px" : "16px 16px 16px 0",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
+                }}
+              >
+                {m.text}
+              </Card>
+            </div>
+          ))}
+          <div ref={messagesEndRef} />
         </div>
-      </div>
-    </Card>
+
+        {/* INPUT */}
+        {selectedUser && (
+          <div style={{ padding: 12, borderTop: "1px solid #ddd", background: "#fff", display: "flex" }}>
+            <Input
+              placeholder="Nhập tin nhắn..."
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onPressEnter={handleSend}
+              style={{ borderRadius: 20, marginRight: 10 }}
+            />
+            <Button type="primary" icon={<SendOutlined />} onClick={handleSend} />
+          </div>
+        )}
+
+      </Content>
+    </Layout>
   );
 };
 

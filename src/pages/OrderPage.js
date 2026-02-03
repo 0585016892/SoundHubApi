@@ -2,29 +2,29 @@ import React, { useEffect, useState } from "react";
 import {
   Table,
   Button,
-  Form,
-  InputGroup,
-  Spinner,
-  Badge,
-  Row,
-  Col,
+  Input,
+  Select,
+  Tag,
+  Space,
+  Modal,
   Card,
-  OverlayTrigger,
-  Tooltip,
-  Dropdown,
-  Pagination,
-  Modal
-} from "react-bootstrap";
+  message,
+} from "antd";
+import {
+  EyeOutlined,
+  DeleteOutlined,
+  SearchOutlined,
+} from "@ant-design/icons";
 import toast from "react-hot-toast";
 import { getOrders, updateOrder, deleteOrder } from "../api/orderApi";
 import OrderDetailModal from "../components/OrderDetailModal";
-import { MdRemoveRedEye, MdDelete } from "react-icons/md";
-// Map trạng thái
+
+// STATUS MAP
 const statusMap = {
-  pending: { label: "Chờ xử lý", color: "warning" },
-  shipping: { label: "Đang vận chuyển", color: "info" },
-  completed: { label: "Hoàn tất", color: "success" },
-  cancelled: { label: "Đã hủy", color: "danger" },
+  pending: { label: "Chờ xử lý", color: "orange" },
+  shipping: { label: "Đang vận chuyển", color: "blue" },
+  completed: { label: "Hoàn tất", color: "green" },
+  cancelled: { label: "Đã hủy", color: "red" },
 };
 
 const OrderPage = () => {
@@ -35,25 +35,23 @@ const OrderPage = () => {
   const [statusFilter, setStatusFilter] = useState("");
 
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
 
   const [selectedOrder, setSelectedOrder] = useState(null);
-  const [showModal, setShowModal] = useState(false);
+  const [openDetail, setOpenDetail] = useState(false);
 
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [openDelete, setOpenDelete] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState(null);
 
-
-  // ================= FETCH ORDERS =================
+  /* ================= FETCH ================= */
   const fetchOrders = async () => {
     try {
       setLoading(true);
       const res = await getOrders(page, 10, search, statusFilter);
-      
-      setOrders(Array.isArray(res.data) ? res.data : []);
-      setTotalPages(res.data.totalPages);
-    } catch (error) {
-      toast.error("Lỗi khi tải đơn hàng");
+      setOrders(res.data || []);
+      setTotal(res.total || 0);
+    } catch {
+      toast.error("Lỗi tải đơn hàng");
     } finally {
       setLoading(false);
     }
@@ -63,241 +61,193 @@ const OrderPage = () => {
     fetchOrders();
   }, [page, search, statusFilter]);
 
-  // ================= HANDLERS =================
-  const handleView = (id) => {
-    setSelectedOrder({ id });
-    setShowModal(true);
-  };
-
+  /* ================= STATUS UPDATE ================= */
   const handleStatusChange = async (id, status) => {
     try {
       await updateOrder(id, { order_status: status });
-      toast.success("Cập nhật trạng thái thành công");
+      message.success("Cập nhật trạng thái thành công");
       fetchOrders();
     } catch {
-      toast.error("Lỗi khi cập nhật trạng thái");
+      message.error("Cập nhật thất bại");
     }
   };
 
-  const openDeleteModal = (order) => {
-    setOrderToDelete(order);
-    setShowDeleteModal(true);
-  };
-
+  /* ================= DELETE ================= */
   const confirmDelete = async () => {
     try {
       await deleteOrder(orderToDelete.id);
-      toast.success("Xóa đơn hàng thành công");
-      setShowDeleteModal(false);
-      setOrderToDelete(null);
+      message.success("Xóa đơn hàng thành công");
+      setOpenDelete(false);
       fetchOrders();
     } catch {
-      toast.error("Không thể xóa đơn hàng");
+      message.error("Không thể xóa");
     }
   };
 
+  /* ================= TABLE COLUMNS ================= */
+  const columns = [
+    {
+      title: "#",
+      width: 60,
+      render: (_, __, i) => (page - 1) * 10 + i + 1,
+    },
+    {
+      title: "Khách hàng",
+      dataIndex: "full_name",
+      render: (t) => <b>{t}</b>,
+    },
+    {
+      title: "Email",
+      dataIndex: "email",
+    },
+    {
+      title: "Điện thoại",
+      dataIndex: "phone",
+    },
+    {
+      title: "Tổng tiền",
+      dataIndex: "total_amount",
+      render: (v) => Number(v).toLocaleString() + "₫",
+    },
+    {
+      title: "Thành tiền",
+      dataIndex: "final_amount",
+      render: (v) => (
+        <span style={{ color: "red", fontWeight: "bold" }}>
+          {Number(v).toLocaleString()}₫
+        </span>
+      ),
+    },
+    {
+      title: "Trạng thái",
+      dataIndex: "order_status",
+      render: (s, record) =>
+        s === "completed" || s === "cancelled" ? (
+          <Tag color={statusMap[s].color}>{statusMap[s].label}</Tag>
+        ) : (
+          <Select
+            size="small"
+            value={s}
+            style={{ width: 160 }}
+            onChange={(v) => handleStatusChange(record.id, v)}
+          >
+            {Object.entries(statusMap).map(([key, val]) => (
+              <Select.Option key={key} value={key}>
+                {val.label}
+              </Select.Option>
+            ))}
+          </Select>
+        ),
+    },
+    {
+      title: "Ngày tạo",
+      dataIndex: "created_at",
+      render: (t) => new Date(t).toLocaleString("vi-VN"),
+    },
+    {
+      title: "Hành động",
+      align: "center",
+      render: (_, record) => (
+        <Space>
+          <Button
+            shape="circle"
+            icon={<EyeOutlined />}
+            onClick={() => {
+              setSelectedOrder({ id: record.id });
+              setOpenDetail(true);
+            }}
+          />
+          <Button
+            danger
+            shape="circle"
+            icon={<DeleteOutlined />}
+            onClick={() => {
+              setOrderToDelete(record);
+              setOpenDelete(true);
+            }}
+          />
+        </Space>
+      ),
+    },
+  ];
 
-  // ================= RENDER =================
   return (
-    <div className="container-fluid mt-4">
-      {/* HEADER */}
-      <Row className="mb-4 align-items-center">
-        <Col>
-          <h2 className="fw-bold">Quản lý đơn hàng</h2>
-        </Col>
+    <div style={{ padding: 24, background: "#f5f7fa", minHeight: "100vh" }}>
+      <Card
+        style={{
+          borderRadius: 20,
+          boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
+          border: "none",
+        }}
+      >
+        {/* HEADER */}
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16 }}>
+          <div>
+            <h2>📦 Quản lý đơn hàng</h2>
+            <span style={{ color: "#888" }}>Theo dõi và xử lý đơn hàng</span>
+          </div>
 
-        <Col md={6}>
-          <InputGroup>
-            <Form.Control
-              placeholder="Tìm theo tên, email, điện thoại..."
-              value={search}
+          <Space>
+            <Input
+              prefix={<SearchOutlined />}
+              placeholder="Tìm tên, email, SĐT..."
+              style={{ width: 260, borderRadius: 30 }}
               onChange={(e) => {
                 setSearch(e.target.value);
                 setPage(1);
               }}
             />
 
-            <Form.Select
-              value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value);
+            <Select
+              allowClear
+              placeholder="Trạng thái"
+              style={{ width: 200 }}
+              onChange={(v) => {
+                setStatusFilter(v || "");
                 setPage(1);
               }}
             >
-              <option value="">Tất cả trạng thái</option>
               {Object.entries(statusMap).map(([key, val]) => (
-                <option key={key} value={key}>
+                <Select.Option key={key} value={key}>
                   {val.label}
-                </option>
+                </Select.Option>
               ))}
-            </Form.Select>
-          </InputGroup>
-        </Col>
-      </Row>
-
-      {/* LOADING */}
-      {loading ? (
-        <div className="text-center my-5">
-          <Spinner animation="border" />
+            </Select>
+          </Space>
         </div>
-      ) : (
-        <Card className="shadow-sm">
-          <Card.Body className="p-0">
-            <Table striped bordered hover responsive className="align-middle mb-0">
-              <thead className="table-dark">
-                <tr>
-                  <th>#</th>
-                  <th>Khách hàng</th>
-                  <th>Email</th>
-                  <th>Điện thoại</th>
-                  <th>Tổng tiền</th>
-                  <th>Thành tiền</th>
-                  <th>Trạng thái</th>
-                  <th>Ngày tạo</th>
-                  <th>Hành động</th>
-                </tr>
-              </thead>
 
-              <tbody>
-                {orders.length > 0 ? (
-                  orders.map((o, index) => (
-                    <tr key={o.id}>
-                      <td>{(page - 1) * 10 + index + 1}</td>
-                      <td>{o.full_name}</td>
-                      <td>{o.email}</td>
-                      <td>{o.phone}</td>
-                      <td>{Number(o.total_amount).toLocaleString()}₫</td>
-                      <td className="fw-bold text-danger">
-                        {Number(o.final_amount).toLocaleString()}₫
-                      </td>
+        {/* TABLE */}
+        <Table
+          columns={columns}
+          dataSource={orders}
+          rowKey="id"
+          loading={loading}
+          bordered={false}
+          pagination={{
+            current: page,
+            pageSize: 10,
+            total,
+            onChange: (p) => setPage(p),
+          }}
+        />
+      </Card>
 
-                      {/* STATUS */}
-                      <td>
-                          {o.order_status === "completed" || o.order_status === "cancelled" ? (
-                            <Badge bg={statusMap[o.order_status].color}>
-                              {statusMap[o.order_status].label}
-                            </Badge>
-                          ) : (
-                            <Form.Select
-                              size="sm"
-                              value={o.order_status}
-                              onChange={(e) => handleStatusChange(o.id, e.target.value)}
-                            >
-                              {Object.entries(statusMap).map(([key, val]) => (
-                                <option key={key} value={key}>
-                                  {val.label}
-                                </option>
-                              ))}
-                            </Form.Select>
-                          )}
-                        </td>
+      {/* DELETE MODAL */}
+      <Modal
+        open={openDelete}
+        onCancel={() => setOpenDelete(false)}
+        onOk={confirmDelete}
+        okText="Xóa"
+        okButtonProps={{ danger: true }}
+        title="⚠️ Xác nhận xóa đơn hàng"
+      >
+        Hành động này không thể hoàn tác!
+      </Modal>
 
-
-                      <td>
-                        {new Date(o.created_at).toLocaleString("vi-VN")}
-                      </td>
-
-                      <td>
-                        <OverlayTrigger
-                          placement="top"
-                          overlay={<Tooltip>Xem chi tiết</Tooltip>}
-                        >
-                          <Button
-                            variant="outline-success"
-                            size="sm"
-                            className="me-1"
-                            onClick={() => handleView(o.id)}
-                          >
-                            <MdRemoveRedEye />
-                          </Button>
-                        </OverlayTrigger>
-
-                        <OverlayTrigger
-                          placement="top"
-                          overlay={<Tooltip>Xóa</Tooltip>}
-                        >
-                          <Button
-                            variant="outline-danger"
-                            size="sm"
-                            onClick={() => openDeleteModal(o.id)}
-                          >
-                            <MdDelete />
-                          </Button>
-                        </OverlayTrigger>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="9" className="text-center py-4">
-                      Không có đơn hàng nào
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </Table>
-          </Card.Body>
-        </Card>
-      )}
-
-      {/* PAGINATION */}
-      {totalPages > 1 && (
-        <Pagination className="justify-content-center mt-3">
-          <Pagination.Prev
-            disabled={page === 1}
-            onClick={() => setPage(page - 1)}
-          />
-
-          {[...Array(totalPages)].map((_, i) => (
-            <Pagination.Item
-              key={i}
-              active={page === i + 1}
-              onClick={() => setPage(i + 1)}
-            >
-              {i + 1}
-            </Pagination.Item>
-          ))}
-
-          <Pagination.Next
-            disabled={page === totalPages}
-            onClick={() => setPage(page + 1)}
-          />
-        </Pagination>
-      )}
-    <Modal
-      show={showDeleteModal}
-      onHide={() => setShowDeleteModal(false)}
-      centered
-    >
-      <Modal.Header closeButton className="bg-danger text-white">
-        <Modal.Title>Xác nhận xóa đơn hàng</Modal.Title>
-      </Modal.Header>
-
-      <Modal.Body>
-        {orderToDelete && (
-          <>
-            <p>Bạn có chắc muốn xóa đơn hàng này?</p>
-            <div className="alert alert-warning mt-3 mb-0">
-              ⚠️ Hành động này không thể hoàn tác
-            </div>
-          </>
-        )}
-      </Modal.Body>
-
-      <Modal.Footer>
-        <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
-          Hủy
-        </Button>
-        <Button variant="danger" onClick={confirmDelete}>
-          Xóa đơn hàng
-        </Button>
-      </Modal.Footer>
-    </Modal>
-
-      {/* MODAL */}
+      {/* DETAIL MODAL */}
       <OrderDetailModal
-        show={showModal}
-        handleClose={() => setShowModal(false)}
+        show={openDetail}
+        handleClose={() => setOpenDetail(false)}
         orderId={selectedOrder?.id}
         statusMap={statusMap}
       />

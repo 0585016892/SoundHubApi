@@ -1,116 +1,139 @@
 import React, { useState, useContext } from "react";
-import { Form, Button, Container, Row, Col, Card, InputGroup, Spinner } from "react-bootstrap";
-import { FaEnvelope, FaLock } from "react-icons/fa";
+import { Form, Input, Button, Card, Row, Col, Spin, message } from "antd";
+import { MailOutlined, LockOutlined } from "@ant-design/icons";
 import { UserContext } from "../context/UserContext";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import Logo from '../assets/img/logo2.png';
+import Logo from "../assets/img/logo2.png";
 import socket from "../utils/socket";
 
 const Login = () => {
-  const API_URL = process.env.REACT_APP_API_URL; 
+  const API_URL = process.env.REACT_APP_API_URL;
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const { login } = useContext(UserContext);
   const navigate = useNavigate();
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setLoading(true);
-  setError("");
+  const onFinish = async (values) => {
+    setLoading(true);
+    try {
+      const res = await axios.post(`${API_URL}/auth/login`, values);
 
-  try {
-    const res = await axios.post(`${API_URL}/auth/login`, { email, password });
-    
-    // Lưu user và token
-    login(res.data.user);
-    localStorage.setItem("token", res.data.token);
+      // Lưu user + token
+      login(res.data.user);
+      localStorage.setItem("token", res.data.token);
 
-    // Kết nối socket và thông báo online
-    socket.connect();
-    socket.emit("join", { userId: res.data.user.id, isAdmin: res.data.user.role === "admin" });
+      // socket connect
+      socket.connect();
+      socket.emit("join", {
+        userId: res.data.user.id,
+        isAdmin: res.data.user.role === "admin",
+      });
 
-    navigate("/dashboard");
-  } catch (err) {
-    setError(err.response?.data?.message || "Đăng nhập thất bại");
-  } finally {
-    setLoading(false);
-  }
-};
+      navigate("/");
+    } catch (err) {
+      message.error(err.response?.data?.message || "Đăng nhập thất bại");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <Container fluid className="d-flex justify-content-center align-items-center" style={{ minHeight: "100vh", background: "#f5f6fa" }}>
-      <Row className="w-100 justify-content-center">
-        <Col xs={12} md={8} lg={6}>
-          <Card className="shadow-lg d-flex flex-row" style={{ borderRadius: "16px", overflow: "hidden" }}>
-            {/* Left illustration */}
-            <div style={{ flex: 1, background: "#f0f3ff", display: "flex", justifyContent: "center", alignItems: "center" }}>
-              <img
-                src={Logo} // placeholder, thay bằng ảnh SVG/PNG của bạn
-                alt="Login Illustration"
-                style={{ width: "100%", maxWidth: "100%" }}
-              />
-            </div>
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "#f5f6fa",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+      }}
+    >
+      <Row style={{ width: "100%", maxWidth: 900 }}>
+        <Col span={24}>
+          <Card
+            style={{
+              borderRadius: 16,
+              overflow: "hidden",
+              boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
+            }}
+            bodyStyle={{ padding: 0 }}
+          >
+            <Row>
+              {/* Left image */}
+              <Col
+                span={12}
+                style={{
+                  background: "#f0f3ff",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                <img src={Logo} alt="Login" style={{ width: "100%" }} />
+              </Col>
 
-            {/* Right form */}
-            <div style={{ flex: 1, padding: "2rem" }}>
-              <div className="text-center mb-4">
-                <img src="https://via.placeholder.com/120x40?text=Logo" alt="Company Logo" />
-              </div>
-              <h5 className="mb-4 text-center">TRANG QUẢN TRỊ</h5>
+              {/* Right form */}
+              <Col span={12} style={{ padding: "40px" }}>
+                <div style={{ textAlign: "center", marginBottom: 20 }}>
+                  <img
+                    src="https://via.placeholder.com/120x40?text=Logo"
+                    alt="logo"
+                  />
+                </div>
 
-              {error && <div className="alert alert-danger">{error}</div>}
+                <h3 style={{ textAlign: "center", marginBottom: 30 }}>
+                  TRANG QUẢN TRỊ
+                </h3>
 
-              <Form onSubmit={handleSubmit}>
-                <Form.Group className="mb-3">
-                  <InputGroup>
-                    <InputGroup.Text style={{ background: "#fff", borderRight: "none" }}><FaEnvelope /></InputGroup.Text>
-                    <Form.Control
-                      type="email"
-                      placeholder="johndoe@xyz.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      style={{ borderRadius: "0 8px 8px 0", borderLeft: "none", height: "45px" }}
-                      required
+                <Form layout="vertical" onFinish={onFinish}>
+                  <Form.Item
+                    name="email"
+                    rules={[
+                      { required: true, message: "Nhập email!" },
+                      { type: "email", message: "Email không hợp lệ!" },
+                    ]}
+                  >
+                    <Input
+                      prefix={<MailOutlined />}
+                      placeholder="johndoe@gmail.com"
+                      size="large"
                     />
-                  </InputGroup>
-                </Form.Group>
+                  </Form.Item>
 
-                <Form.Group className="mb-3">
-                  <InputGroup>
-                    <InputGroup.Text style={{ background: "#fff", borderRight: "none" }}><FaLock /></InputGroup.Text>
-                    <Form.Control
-                      type="password"
+                  <Form.Item
+                    name="password"
+                    rules={[{ required: true, message: "Nhập mật khẩu!" }]}
+                  >
+                    <Input.Password
+                      prefix={<LockOutlined />}
                       placeholder="********"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      style={{ borderRadius: "0 8px 8px 0", borderLeft: "none", height: "45px" }}
-                      required
+                      size="large"
                     />
-                  </InputGroup>
-                </Form.Group>
+                  </Form.Item>
 
-                <Button
-                  type="submit"
-                  className="w-100 py-2 mb-2"
-                  style={{ background: "#6C63FF", border: "none", borderRadius: "8px" }}
-                  disabled={loading}
-                >
-                  {loading ? <Spinner animation="border" size="sm" /> : "LOGIN"}
-                </Button>
-              </Form>
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    block
+                    size="large"
+                    style={{ background: "#6C63FF", borderRadius: 8 }}
+                    disabled={loading}
+                  >
+                    {loading ? <Spin /> : "LOGIN"}
+                  </Button>
+                </Form>
 
-              <div className="text-center mt-2">
-                <a href="/forgot-password" style={{ fontSize: "0.85rem", color: "#6C63FF" }}>Forget your password?</a>
-              </div>
-            </div>
+                <div style={{ textAlign: "center", marginTop: 10 }}>
+                  <a href="/forgot-password" style={{ color: "#6C63FF" }}>
+                    Forget your password?
+                  </a>
+                </div>
+              </Col>
+            </Row>
           </Card>
         </Col>
       </Row>
-    </Container>
+    </div>
   );
 };
 

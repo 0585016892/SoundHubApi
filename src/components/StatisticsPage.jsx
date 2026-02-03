@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Container, Row, Col, Card, Spinner, Tabs, Tab } from "react-bootstrap";
+import { Card, Tabs, Row, Col, Spin, Typography } from "antd";
 import {
   LineChart, Line,
   BarChart, Bar,
@@ -15,6 +15,8 @@ import {
   getCoupons
 } from "../api/statisApi";
 
+const { Title } = Typography;
+
 /* ================= CONSTANT ================= */
 const COLORS = ["#FF6B6B", "#FFD93D", "#6BCB77", "#4D96FF", "#9B5DE5"];
 const STATUS_COLORS = {
@@ -27,7 +29,6 @@ const STATUS_COLORS = {
 /* ================= COMPONENT ================= */
 const StatisticsPage = () => {
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState("revenue");
 
   const [revenueData, setRevenueData] = useState([]);
   const [topProducts, setTopProducts] = useState([]);
@@ -36,7 +37,6 @@ const StatisticsPage = () => {
   const [couponData, setCouponData] = useState([]);
   const [orderStatusData, setOrderStatusData] = useState([]);
 
-  /* ================= FETCH ================= */
   useEffect(() => {
     fetchStatistics();
   }, []);
@@ -44,7 +44,6 @@ const StatisticsPage = () => {
   const fetchStatistics = async () => {
     try {
       setLoading(true);
-
       const [rev, prod, cust, stock, coupon] = await Promise.all([
         getRevenue("day"),
         getTopProducts(),
@@ -59,7 +58,6 @@ const StatisticsPage = () => {
       setStockData(stock || []);
       setCouponData(coupon || []);
 
-      // Tạm thời giả lập trạng thái đơn hàng
       setOrderStatusData([
         { status: "pending", value: 12 },
         { status: "shipped", value: 25 },
@@ -69,37 +67,35 @@ const StatisticsPage = () => {
 
     } catch (err) {
       console.error(err);
-      toast.error("Không thể tải dữ liệu thống kê");
+      toast.error("Không thể tải thống kê");
     } finally {
       setLoading(false);
     }
   };
 
-  const totalRevenue = revenueData.reduce((sum, i) => sum + i.revenue, 0);
-
-  /* ================= LOADING ================= */
   if (loading) {
     return (
-      <div className="text-center my-5">
-        <Spinner animation="border" />
+      <div style={{ textAlign: "center", marginTop: 100 }}>
+        <Spin size="large" />
       </div>
     );
   }
 
-  /* ================= RENDER ================= */
   return (
-    <div style={{ background: "#f4f6f8", minHeight: "100vh", padding: "30px 0" }}>
-      <Container fluid>
-        <h3 className="text-center fw-bold mb-4">Thống kê & báo cáo</h3>
+    <div style={{ background: "#f0f2f5", minHeight: "100vh", padding: 24 }}>
+      <Title level={3} style={{ textAlign: "center", marginBottom: 20 }}>
+        📊 Dashboard thống kê hệ thống
+      </Title>
 
-
-        {/* ===== TABS ===== */}
-        <Card className="shadow-sm border-0 rounded-4">
-          <Card.Body>
-            <Tabs activeKey={tab} onSelect={(k) => setTab(k)} className="mb-4 justify-content-center">
-
-              {/* DOANH THU */}
-              <Tab eventKey="revenue" title="📈 Doanh thu">
+      <Card bordered={false} style={{ borderRadius: 16 }}>
+        <Tabs
+          centered
+          size="large"
+          items={[
+            {
+              key: "revenue",
+              label: "📈 Doanh thu",
+              children: (
                 <ChartCard title="Doanh thu theo ngày">
                   <LineChart data={revenueData}>
                     <CartesianGrid strokeDasharray="3 3" />
@@ -109,112 +105,64 @@ const StatisticsPage = () => {
                     <Line dataKey="revenue" stroke="#FF6B6B" strokeWidth={3} dot={false} />
                   </LineChart>
                 </ChartCard>
-              </Tab>
+              )
+            },
 
-              {/* SAN PHAM */}
-              <Tab eventKey="products" title="📦 Sản phẩm">
-                  <Row className="g-4">
+            {
+              key: "products",
+              label: "📦 Sản phẩm",
+              children: (
+                <Row gutter={16}>
+                  <Col span={12}>
+                    <ChartCard title="Top sản phẩm bán chạy">
+                      <BarChart data={topProducts}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" angle={-30} textAnchor="end" interval={0} height={80} />
+                        <YAxis />
+                        <Tooltip />
+                        <Bar dataKey="sold_quantity" fill="#FFD93D" radius={[6, 6, 0, 0]} />
+                      </BarChart>
+                    </ChartCard>
+                  </Col>
 
-                    {/* TOP BAN CHAY */}
-                    <Col md={6}>
-                      <ChartCard title="Top sản phẩm bán chạy">
-                        <BarChart data={topProducts}>
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis
-                            dataKey="name"
-                            angle={-30}
-                            textAnchor="end"
-                            interval={0}
-                            height={80}
-                          />
-                          <YAxis />
-                          <Tooltip />
-                          <Bar
-                            dataKey="sold_quantity"
-                            fill="#FFD93D"
-                            radius={[6, 6, 0, 0]}
-                          />
-                        </BarChart>
-                      </ChartCard>
-                    </Col>
+                  <Col span={12}>
+                    <ChartCard title="Sản phẩm tồn kho thấp">
+                      <BarChart data={stockData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name_variant" angle={-30} textAnchor="end" interval={0} height={80} />
+                        <YAxis />
+                        <Tooltip />
+                        <Bar dataKey="stock" fill="#4D96FF" radius={[6, 6, 0, 0]} />
+                      </BarChart>
+                    </ChartCard>
+                  </Col>
+                </Row>
+              )
+            },
 
-                    {/* TON KHO THAP */}
-                    <Col md={6}>
-                      <ChartCard title="Sản phẩm tồn kho thấp">
-                        <div style={{ width: "100%", height: 350 }}>
-                          <ResponsiveContainer>
-                            <BarChart
-                              data={stockData}
-                              margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
-                            >
-                              <CartesianGrid strokeDasharray="3 3" />
+            {
+              key: "customers",
+              label: "👥 Khách hàng",
+              children: (
+                <ChartCard title="Top khách hàng">
+                  <BarChart data={customers.topCustomers}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="full_name" angle={-30} textAnchor="end" interval={0} height={80} />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="total_orders" fill="#6BCB77" radius={[6, 6, 0, 0]} />
+                  </BarChart>
+                </ChartCard>
+              )
+            },
 
-                              <XAxis
-                                dataKey="name_variant"
-                                angle={-30}
-                                textAnchor="end"
-                                interval={0}
-                              />
-
-                              <YAxis />
-
-                              <Tooltip />
-
-                              <Bar
-                                dataKey="stock"
-                                fill="#4D96FF"
-                                radius={[6, 6, 0, 0]}
-                              />
-                            </BarChart>
-                          </ResponsiveContainer>
-                        </div>
-                      </ChartCard>
-                    </Col>
-
-
-                  </Row>
-                </Tab>
-
-
-              {/* KHACH HANG */}
-            <Tab eventKey="customers" title="👥 Khách hàng">
-              <ChartCard title="Top khách hàng">
-                <div style={{ width: "100%", height: 350 }}>
-                  <ResponsiveContainer>
-                    <BarChart
-                      data={customers.topCustomers}
-                      margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-
-                      <XAxis
-                        dataKey="full_name"
-                        angle={-30}
-                        textAnchor="end"
-                        interval={0}
-                      />
-
-                      <YAxis />
-
-                      <Tooltip />
-
-                      <Bar
-                        dataKey="total_orders"
-                        fill="#6BCB77"
-                        radius={[6, 6, 0, 0]}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </ChartCard>
-            </Tab>
-
-
-              {/* COUPON */}
-              <Tab eventKey="coupons" title="🎟 Coupon">
+            {
+              key: "coupons",
+              label: "🎟 Coupon",
+              children: (
                 <ChartCard title="Coupon còn lại">
                   <PieChart>
-                    <Pie data={couponData} dataKey="remaining" nameKey="code" outerRadius={100} label>
+                    <Pie data={couponData} dataKey="remaining" nameKey="code" outerRadius={120} label>
                       {couponData.map((_, i) => (
                         <Cell key={i} fill={COLORS[i % COLORS.length]} />
                       ))}
@@ -222,13 +170,16 @@ const StatisticsPage = () => {
                     <Tooltip />
                   </PieChart>
                 </ChartCard>
-              </Tab>
+              )
+            },
 
-              {/* DON HANG */}
-              <Tab eventKey="orders" title="🚚 Đơn hàng">
+            {
+              key: "orders",
+              label: "🚚 Đơn hàng",
+              children: (
                 <ChartCard title="Trạng thái đơn hàng">
                   <PieChart>
-                    <Pie data={orderStatusData} dataKey="value" nameKey="status" outerRadius={100} label>
+                    <Pie data={orderStatusData} dataKey="value" nameKey="status" outerRadius={120} label>
                       {orderStatusData.map((i, idx) => (
                         <Cell key={idx} fill={STATUS_COLORS[i.status]} />
                       ))}
@@ -236,27 +187,25 @@ const StatisticsPage = () => {
                     <Tooltip />
                   </PieChart>
                 </ChartCard>
-              </Tab>
-
-            </Tabs>
-          </Card.Body>
-        </Card>
-      </Container>
+              )
+            }
+          ]}
+        />
+      </Card>
     </div>
   );
 };
 
 /* ================= SUB COMPONENT ================= */
-
-
 const ChartCard = ({ title, children }) => (
-  <Card className="shadow-sm border-0 rounded-4">
-    <Card.Body>
-      <h6 className="fw-bold mb-3">{title}</h6>
-      <ResponsiveContainer width="100%" height={320}>
-        {children}
-      </ResponsiveContainer>
-    </Card.Body>
+  <Card
+    bordered={false}
+    style={{ borderRadius: 16, boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}
+  >
+    <Title level={5}>{title}</Title>
+    <div style={{ width: "100%", height: 350 }}>
+      <ResponsiveContainer>{children}</ResponsiveContainer>
+    </div>
   </Card>
 );
 

@@ -1,145 +1,180 @@
 // src/pages/Dashboard.jsx
 import { useEffect, useState } from "react";
-import { Row, Col, Card, Badge, Table } from "react-bootstrap";
-import { FaUsers, FaShoppingCart, FaTags, FaBoxOpen } from "react-icons/fa";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell } from "recharts";
+import { Row, Col, Card, Statistic, Table, Tag } from "antd";
+import {
+  UserOutlined,
+  ShoppingCartOutlined,
+  TagsOutlined,
+  BoxPlotOutlined,
+} from "@ant-design/icons";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+  PieChart,
+  Pie,
+  Cell,
+} from "recharts";
 import axios from "axios";
 
 const Dashboard = () => {
-  const API_URL = process.env.REACT_APP_API_URL; 
+  const API_URL = process.env.REACT_APP_API_URL;
   const [infoCards, setInfoCards] = useState({});
   const [ordersData, setOrdersData] = useState([]);
   const [productCategories, setProductCategories] = useState([]);
   const [recentOrders, setRecentOrders] = useState([]);
 
   useEffect(() => {
-    axios.get(`${API_URL}/dashboard`)
-      .then(res => {
+    axios
+      .get(`${API_URL}/dashboard`)
+      .then((res) => {
         setInfoCards(res.data.infoCards);
         setOrdersData(res.data.ordersData);
         setProductCategories(res.data.productCategories);
         setRecentOrders(res.data.recentOrders);
       })
-      .catch(err => console.log(err));
+      .catch((err) => console.log(err));
   }, []);
 
   const statusColor = {
-    pending: "warning",
-    shipping: "info",
-    completed: "success",
-    canceled: "danger"
+    pending: "orange",
+    shipping: "blue",
+    completed: "green",
+    canceled: "red",
   };
 
-  const infoCardList = [
-    { title: "Khách hàng", value: infoCards.customers, icon: FaUsers, bg: "linear-gradient(135deg, #6a11cb 0%, #2575fc 100%)" },
-    { title: "Đơn hàng", value: infoCards.orders, icon: FaShoppingCart, bg: "linear-gradient(135deg, #33a06a 0%, #6adf9a 100%)" },
-    { title: "Mã giảm giá", value: infoCards.coupons, icon: FaTags, bg: "linear-gradient(135deg, #ff7f50 0%, #ffa07a 100%)" },
-    { title: "Sản phẩm", value: infoCards.products, icon: FaBoxOpen, bg: "linear-gradient(135deg, #ffcc00 0%, #ffd700 100%)" },
-  ];
+// Info Cards PRO
+const infoCardList = [
+  {
+    title: "Khách hàng",
+    value: infoCards.customers || 0,
+    icon: <UserOutlined />,
+    bg: "linear-gradient(135deg, #667eea, #764ba2)",
+  },
+  {
+    title: "Đơn hàng",
+    value: infoCards.orders || 0,
+    icon: <ShoppingCartOutlined />,
+    bg: "linear-gradient(135deg, #43cea2, #185a9d)",
+  },
+  {
+    title: "Mã giảm giá",
+    value: infoCards.coupons || 0,
+    icon: <TagsOutlined />,
+    bg: "linear-gradient(135deg, #ff512f, #dd2476)",
+  },
+  {
+    title: "Sản phẩm",
+    value: infoCards.products || 0,
+    icon: <BoxPlotOutlined />,
+    bg: "linear-gradient(135deg, #f7971e, #ffd200)",
+  },
+];
+
 
   const pieColors = ["#33a06a", "#ff7f50", "#6a11cb", "#ffd700", "#2575fc"];
 
+  // Table columns
+  const columns = [
+    { title: "Mã đơn", dataIndex: "id", key: "id" },
+    { title: "Khách hàng", dataIndex: "customer", key: "customer" },
+    {
+      title: "Tổng tiền",
+      dataIndex: "total_amount",
+      key: "total_amount",
+      render: (val) => Number(val).toLocaleString() + " VNĐ",
+    },
+    {
+      title: "Trạng thái",
+      dataIndex: "order_status",
+      key: "order_status",
+      render: (status) => <Tag color={statusColor[status]}>{status}</Tag>,
+    },
+  ];
+
   return (
-    <div className="dashboard-page">
-      <h3 className="mb-4 fw-bold">Dashboard</h3>
+    <div>
+      <h2 style={{ marginBottom: 20 }}>📊 Dashboard</h2>
 
       {/* Info Cards */}
-      <Row className="mb-4 g-3">
-        {infoCardList.map((card, i) => {
-          const Icon = card.icon;
-          return (
-            <Col md={3} key={i}>
-              <Card className="shadow-sm border-0 hover-card" style={{ borderRadius: "12px", overflow: "hidden", transition: 'transform 0.2s' }}>
-                <Card.Body className="d-flex align-items-center gap-3" style={{ background: card.bg, color: "#fff", height: "110px" }}>
-                  <div>
-                    <Icon size={40} />
-                  </div>
-                  <div>
-                    <Card.Title className="mb-1 fw-bold">{card.title}</Card.Title>
-                    <Card.Text className="h4 mb-0 fw-bold">{card.value}</Card.Text>
-                  </div>
-                </Card.Body>
-              </Card>
-            </Col>
-          );
-        })}
-      </Row>
+      <Row gutter={[20, 20]}>
+  {infoCardList.map((card, i) => (
+    <Col span={6} key={i}>
+      <Card
+        bordered={false}
+        hoverable
+        style={{
+          borderRadius: 16,
+          background: card.bg,
+          color: "#fff",
+          boxShadow: "0 10px 25px rgba(0,0,0,0.2)",
+          transition: "0.3s",
+        }}
+        bodyStyle={{ padding: 20 }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div>
+            <div style={{ fontSize: 14, opacity: 0.9 }}>{card.title}</div>
+            <div style={{ fontSize: 28, fontWeight: "bold" }}>{card.value}</div>
+          </div>
+
+          <div
+            style={{
+              fontSize: 36,
+              background: "rgba(255,255,255,0.2)",
+              padding: 12,
+              borderRadius: "50%",
+            }}
+          >
+            {card.icon}
+          </div>
+        </div>
+      </Card>
+    </Col>
+  ))}
+</Row>
+
 
       {/* Charts */}
-      <Row className="mb-4 g-3">
-        <Col md={6}>
-          <Card className="shadow-sm border-0" style={{ borderRadius: "12px" }}>
-            <Card.Header className="fw-bold bg-white border-0">Đơn hàng theo ngày</Card.Header>
-            <Card.Body>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={ordersData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
-                  <XAxis dataKey="date" stroke="#888888" />
-                  <YAxis stroke="#888888" />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="orders" stroke="#33a06a" strokeWidth={3} name="Số đơn" />
-                  <Line type="monotone" dataKey="revenue" stroke="#ff7f50" strokeWidth={3} name="Doanh thu" />
-                </LineChart>
-              </ResponsiveContainer>
-            </Card.Body>
+      <Row gutter={[16, 16]} style={{ marginTop: 20 }}>
+        <Col span={12}>
+          <Card title="Đơn hàng theo ngày" bordered={false}>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={ordersData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip />
+                <Line type="monotone" dataKey="orders" stroke="#33a06a" strokeWidth={3} />
+                <Line type="monotone" dataKey="revenue" stroke="#ff7f50" strokeWidth={3} />
+              </LineChart>
+            </ResponsiveContainer>
           </Card>
         </Col>
-        <Col md={6}>
-          <Card className="shadow-sm border-0" style={{ borderRadius: "12px" }}>
-            <Card.Header className="fw-bold bg-white border-0">Phân loại sản phẩm</Card.Header>
-            <Card.Body>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={productCategories}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={90}
-                    label
-                  >
-                    {productCategories.map((entry, index) => (
-                      <Cell key={index} fill={pieColors[index % pieColors.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </Card.Body>
+
+        <Col span={12}>
+          <Card title="Phân loại sản phẩm" bordered={false}>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie data={productCategories} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} label>
+                  {productCategories.map((entry, index) => (
+                    <Cell key={index} fill={pieColors[index % pieColors.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
           </Card>
         </Col>
       </Row>
 
       {/* Recent Orders */}
-      <Card className="shadow-sm border-0" style={{ borderRadius: "12px" }}>
-        <Card.Header className="fw-bold bg-white border-0">Đơn hàng gần đây</Card.Header>
-        <Card.Body className="p-0">
-          <Table hover responsive className="mb-0 align-middle table-dashboard">
-            <thead className="table-light">
-              <tr>
-                <th>Mã đơn</th>
-                <th>Khách hàng</th>
-                <th>Tổng tiền</th>
-                <th>Trạng thái</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recentOrders.map(order => (
-                <tr key={order.id}>
-                  <td>{order.id}</td>
-                  <td>{order.customer}</td>
-                  <td>{Number(order.total_amount).toLocaleString()} VNĐ</td>
-                  <td>
-                    <Badge bg={statusColor[order.order_status]} pill className="px-2 py-1">
-                      {order.order_status}
-                    </Badge>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
-        </Card.Body>
+      <Card title="Đơn hàng gần đây" bordered={false} style={{ marginTop: 20 }}>
+        <Table columns={columns} dataSource={recentOrders} rowKey="id" pagination={false} />
       </Card>
     </div>
   );

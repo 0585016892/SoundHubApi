@@ -1,22 +1,31 @@
 import React, { useEffect, useState } from "react";
-import { Modal, Button, Table, Spinner, Badge, Row, Col } from "react-bootstrap";
-import toast from "react-hot-toast";
+import {
+  Modal,
+  Spin,
+  Tag,
+  Row,
+  Col,
+  Card,
+  Table,
+  Descriptions,
+  Divider,
+} from "antd";
 import { getOrderById } from "../api/orderApi";
+import toast from "react-hot-toast";
 
-// ===== STATUS MAP =====
+// STATUS MAP
 const statusMap = {
-  pending: { label: "Chờ xử lý", bg: "warning" },
-  shipping: { label: "Đang vận chuyển", bg: "info" },
-  completed: { label: "Hoàn tất", bg: "success" },
-  cancelled: { label: "Đã hủy", bg: "danger" },
+  pending: { label: "Chờ xử lý", color: "orange" },
+  shipping: { label: "Đang vận chuyển", color: "blue" },
+  completed: { label: "Hoàn tất", color: "green" },
+  cancelled: { label: "Đã hủy", color: "red" },
 };
 
 const OrderDetailModal = ({ show, handleClose, orderId }) => {
-  
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // ===== FETCH ORDER =====
+  /* ================= FETCH ================= */
   useEffect(() => {
     if (!orderId) return;
 
@@ -24,14 +33,12 @@ const OrderDetailModal = ({ show, handleClose, orderId }) => {
       try {
         setLoading(true);
         const res = await getOrderById(orderId);
-
         setOrder({
           ...res,
           items: Array.isArray(res.items) ? res.items : [],
         });
-      } catch (error) {
+      } catch {
         toast.error("Không thể tải chi tiết đơn hàng");
-        setOrder(null);
       } finally {
         setLoading(false);
       }
@@ -40,168 +47,162 @@ const OrderDetailModal = ({ show, handleClose, orderId }) => {
     fetchOrder();
   }, [orderId]);
 
-  // ===== TOTAL =====
-  const subTotal = Number(order?.order.total_amount || 0);
-  const discount = Number(order?.order.discount_amount || 0);
-  const finalTotal = Number(order?.order.final_amount || 0);
+  /* ================= TOTAL ================= */
+  const subTotal = Number(order?.order?.total_amount || 0);
+  const discount = Number(order?.order?.discount_amount || 0);
+  const finalTotal = Number(order?.order?.final_amount || 0);
+
+  /* ================= TABLE ================= */
+  const columns = [
+    {
+      title: "#",
+      width: 60,
+      render: (_, __, i) => i + 1,
+    },
+    {
+      title: "Sản phẩm",
+      dataIndex: "product_name",
+    },
+    {
+      title: "Màu",
+      dataIndex: "color",
+      render: (c) => <Tag>{c}</Tag>,
+    },
+    {
+      title: "SL",
+      dataIndex: "quantity",
+    },
+    {
+      title: "Giá",
+      dataIndex: "price",
+      render: (v) => Number(v).toLocaleString() + " ₫",
+    },
+    {
+      title: "Thành tiền",
+      dataIndex: "total",
+      render: (v) => (
+        <b style={{ color: "#52c41a" }}>
+          {Number(v).toLocaleString()} ₫
+        </b>
+      ),
+    },
+  ];
 
   return (
-    <Modal show={show} onHide={handleClose} size="xl" centered>
-      {/* ===== HEADER ===== */}
-      <Modal.Header
-        closeButton
-        className="text-white"
-        style={{ background: "linear-gradient(90deg,#0d6efd,#6610f2)" }}
-      >
-        <Modal.Title>
-          🧾 Đơn hàng #{order?.order.id}
-          {order?.order.order_status && (
-            <Badge
-              bg={statusMap[order.order.order_status]?.bg}
-              className="ms-3 px-3 rounded-pill"
-            >
+    <Modal
+      open={show}
+      onCancel={handleClose}
+      footer={null}
+      width={1100}
+      centered
+      title={
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <span>🧾 Đơn hàng #{order?.order?.id}</span>
+          {order?.order?.order_status && (
+            <Tag color={statusMap[order.order.order_status]?.color}>
               {statusMap[order.order.order_status]?.label}
-            </Badge>
+            </Tag>
           )}
-        </Modal.Title>
-      </Modal.Header>
-
-      {/* ===== BODY ===== */}
-      <Modal.Body>
-        {loading ? (
-          <div className="text-center my-5">
-            <Spinner animation="border" />
-          </div>
-        ) : order ? (
-          <>
-            {/* ===== CUSTOMER & PAYMENT ===== */}
-            <Row className="g-3 mb-3">
-              <Col md={6}>
-                <div className="p-3 border rounded bg-light h-100">
-                  <h6 className="text-primary mb-2">👤 Thông tin khách hàng</h6>
-                  <p className="mb-1"><strong>Họ tên:</strong> {order.order.full_name}</p>
-                  <p className="mb-1"><strong>Email:</strong> {order.order.email}</p>
-                  <p className="mb-1"><strong>Điện thoại:</strong> {order.order.phone}</p>
-                  <p className="mb-0">
-                    <strong>Ngày đặt:</strong>{" "}
+        </div>
+      }
+    >
+      {loading ? (
+        <div style={{ textAlign: "center", padding: 50 }}>
+          <Spin size="large" />
+        </div>
+      ) : order ? (
+        <>
+          {/* ================= CUSTOMER INFO ================= */}
+          <Row gutter={16}>
+            <Col span={12}>
+              <Card title="👤 Thông tin khách hàng" bordered={false}>
+                <Descriptions column={1} size="small">
+                  <Descriptions.Item label="Họ tên">
+                    {order.order.full_name}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Email">
+                    {order.order.email}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Điện thoại">
+                    {order.order.phone}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Ngày đặt">
                     {new Date(order.order.created_at).toLocaleString("vi-VN")}
-                  </p>
-                </div>
-              </Col>
+                  </Descriptions.Item>
+                </Descriptions>
+              </Card>
+            </Col>
 
-              <Col md={6}>
-                <div className="p-3 border rounded bg-light h-100">
-                  <h6 className="text-primary mb-2">💳 Thanh toán</h6>
-                  <p className="mb-1">
-                    <strong>Phương thức:</strong>{" "}
-                    <Badge bg="secondary" className="rounded-pill">
+            <Col span={12}>
+              <Card title="💳 Thanh toán" bordered={false}>
+                <Descriptions column={1} size="small">
+                  <Descriptions.Item label="Phương thức">
+                    <Tag color="blue">
                       {order.order.payment_method?.toUpperCase()}
-                    </Badge>
-                  </p>
-                  <p className="mb-1">
-                    <strong>Mã giảm giá:</strong>{" "}
+                    </Tag>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Mã giảm giá">
                     {order.order.coupon_code ? (
-                      <Badge bg="success">{order.order.coupon_code}</Badge>
+                      <Tag color="green">{order.order.coupon_code}</Tag>
                     ) : (
-                      <span className="text-muted">Không có</span>
+                      "Không có"
                     )}
-                  </p>
-                  <p className="mb-0">
-                    <strong>Ghi chú:</strong>{" "}
-                    {order.order.note || <span className="text-muted">Không có</span>}
-                  </p>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Ghi chú">
+                    {order.order.note || "Không có"}
+                  </Descriptions.Item>
+                </Descriptions>
+              </Card>
+            </Col>
+          </Row>
+
+          {/* ================= ADDRESS ================= */}
+          <Card title="📍 Địa chỉ giao hàng" bordered={false} style={{ marginTop: 16 }}>
+            {order.order.address}
+          </Card>
+
+          {/* ================= PRODUCTS ================= */}
+          <Divider>🛒 Danh sách sản phẩm</Divider>
+
+          <Table
+            columns={columns}
+            dataSource={order.items}
+            rowKey={(r, i) => i}
+            pagination={false}
+            scroll={{ y: 280 }}
+            bordered
+            size="small"
+          />
+
+          {/* ================= TOTAL ================= */}
+          <Card style={{ marginTop: 16, background: "#fafafa" }} bordered={false}>
+            <Row justify="end">
+              <Col span={8}>
+                <div className="d-flex justify-content-between mb-2">
+                  <span>Tạm tính:</span>
+                  <b>{subTotal.toLocaleString()} ₫</b>
+                </div>
+
+                <div className="d-flex justify-content-between mb-2" style={{ color: "red" }}>
+                  <span>Giảm giá:</span>
+                  <b>- {discount.toLocaleString()} ₫</b>
+                </div>
+
+                <Divider />
+
+                <div className="d-flex justify-content-between" style={{ fontSize: 18 }}>
+                  <b>Thành tiền:</b>
+                  <b style={{ color: "#52c41a" }}>
+                    {finalTotal.toLocaleString()} ₫
+                  </b>
                 </div>
               </Col>
             </Row>
-
-            {/* ===== ADDRESS ===== */}
-            <div className="p-3 border rounded bg-white mb-3">
-              <h6 className="text-primary mb-2">📍 Địa chỉ giao hàng</h6>
-              <p className="mb-0">{order.order.address}</p>
-            </div>
-
-            {/* ===== PRODUCT LIST ===== */}
-            <h6 className="mb-2 text-secondary">🛒 Danh sách sản phẩm</h6>
-
-            <div
-              className="border rounded shadow-sm"
-              style={{ maxHeight: 350, overflowY: "auto" }}
-            >
-              <Table hover responsive className="mb-0 align-middle">
-                <thead
-                  className="table-dark"
-                  style={{ position: "sticky", top: 0, zIndex: 2 }}
-                >
-                  <tr>
-                    <th>#</th>
-                    <th>Sản phẩm</th>
-                    <th>Màu</th>
-                    <th>SL</th>
-                    <th>Giá</th>
-                    <th>Thành tiền</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {order.items.length > 0 ? (
-                    order.items.map((item, idx) => (
-                      <tr key={idx}>
-                        <td>{idx + 1}</td>
-                        <td>{item.product_name}</td>
-                        <td><Badge bg="secondary">{item.color}</Badge></td>
-                        <td>{item.quantity}</td>
-                        <td>{Number(item.price).toLocaleString()} ₫</td>
-                        <td className="fw-bold text-success">
-                          {Number(item.total).toLocaleString()} ₫
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="6" className="text-center text-muted py-4">
-                        Không có sản phẩm
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </Table>
-            </div>
-
-            {/* ===== TOTAL ===== */}
-            <div className="border rounded p-3 mt-4 bg-light">
-              <Row>
-                <Col md={6}></Col>
-                <Col md={6}>
-                  <div className="d-flex justify-content-between mb-2">
-                    <span>Tạm tính:</span>
-                    <strong>{subTotal.toLocaleString()} ₫</strong>
-                  </div>
-
-                  <div className="d-flex justify-content-between mb-2 text-danger">
-                    <span>Giảm giá:</span>
-                    <strong>- {discount.toLocaleString()} ₫</strong>
-                  </div>
-
-                  <hr />
-
-                  <div className="d-flex justify-content-between fs-5 text-success">
-                    <strong>Thành tiền:</strong>
-                    <strong>{finalTotal.toLocaleString()} ₫</strong>
-                  </div>
-                </Col>
-              </Row>
-            </div>
-          </>
-        ) : (
-          <p className="text-center text-muted">Không có dữ liệu</p>
-        )}
-      </Modal.Body>
-
-      {/* ===== FOOTER ===== */}
-      <Modal.Footer>
-        <Button variant="secondary" onClick={handleClose}>
-          Đóng
-        </Button>
-      </Modal.Footer>
+          </Card>
+        </>
+      ) : (
+        <p style={{ textAlign: "center", color: "#999" }}>Không có dữ liệu</p>
+      )}
     </Modal>
   );
 };
