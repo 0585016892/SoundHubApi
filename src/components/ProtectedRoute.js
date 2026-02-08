@@ -12,7 +12,7 @@ const ProtectedRoute = ({ children, roles }) => {
 
   if (roles && !roles.includes(user.role)) {
     // Không đủ quyền
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/" replace />;
   }
 
   return children;

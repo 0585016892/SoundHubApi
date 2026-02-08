@@ -1,15 +1,16 @@
-// src/pages/Dashboard.jsx
 import { useEffect, useState } from "react";
-import { Row, Col, Card, Statistic, Table, Tag } from "antd";
+import { Row, Col, Card, Statistic, Table, Tag, Typography, ConfigProvider } from "antd";
 import {
   UserOutlined,
   ShoppingCartOutlined,
   TagsOutlined,
   BoxPlotOutlined,
+  ArrowUpOutlined,
+  SoundOutlined
 } from "@ant-design/icons";
 import {
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   Tooltip,
@@ -20,6 +21,8 @@ import {
   Cell,
 } from "recharts";
 import axios from "axios";
+
+const { Title, Text } = Typography;
 
 const Dashboard = () => {
   const API_URL = process.env.REACT_APP_API_URL;
@@ -42,141 +45,183 @@ const Dashboard = () => {
 
   const statusColor = {
     pending: "orange",
-    shipping: "blue",
-    completed: "green",
-    canceled: "red",
+    shipping: "cyan",
+    completed: "#52c41a",
+    canceled: "#ff4d4f",
   };
 
-// Info Cards PRO
-const infoCardList = [
-  {
-    title: "Khách hàng",
-    value: infoCards.customers || 0,
-    icon: <UserOutlined />,
-    bg: "linear-gradient(135deg, #667eea, #764ba2)",
-  },
-  {
-    title: "Đơn hàng",
-    value: infoCards.orders || 0,
-    icon: <ShoppingCartOutlined />,
-    bg: "linear-gradient(135deg, #43cea2, #185a9d)",
-  },
-  {
-    title: "Mã giảm giá",
-    value: infoCards.coupons || 0,
-    icon: <TagsOutlined />,
-    bg: "linear-gradient(135deg, #ff512f, #dd2476)",
-  },
-  {
-    title: "Sản phẩm",
-    value: infoCards.products || 0,
-    icon: <BoxPlotOutlined />,
-    bg: "linear-gradient(135deg, #f7971e, #ffd200)",
-  },
-];
+  const infoCardList = [
+    { title: "Khách hàng", value: infoCards.customers, icon: <UserOutlined />, color: "#ff6600" },
+    { title: "Đơn hàng", value: infoCards.orders, icon: <ShoppingCartOutlined />, color: "#ff6600" },
+    { title: "Mã giảm giá", value: infoCards.coupons, icon: <TagsOutlined />, color: "#ff6600" },
+    { title: "Sản phẩm", value: infoCards.products, icon: <BoxPlotOutlined />, color: "#ff6600" },
+  ];
 
+  const pieColors = ["#ff6600", "#ff944d", "#cc5200", "#ffd1b3", "#4d1f00"];
 
-  const pieColors = ["#33a06a", "#ff7f50", "#6a11cb", "#ffd700", "#2575fc"];
-
-  // Table columns
   const columns = [
-    { title: "Mã đơn", dataIndex: "id", key: "id" },
-    { title: "Khách hàng", dataIndex: "customer", key: "customer" },
+    { title: "MÃ ĐƠN", dataIndex: "id", key: "id", render: (text) => <Text style={{ color: "#ff6600", fontWeight: "bold" }}>#{text}</Text> },
+    { title: "KHÁCH HÀNG", dataIndex: "customer", key: "customer" },
     {
-      title: "Tổng tiền",
+      title: "TỔNG TIỀN",
       dataIndex: "total_amount",
       key: "total_amount",
-      render: (val) => Number(val).toLocaleString() + " VNĐ",
+      render: (val) => <Text strong style={{ color: "#fff" }}>{Number(val).toLocaleString()} ₫</Text>,
     },
     {
-      title: "Trạng thái",
+      title: "TRẠNG THÁI",
       dataIndex: "order_status",
       key: "order_status",
-      render: (status) => <Tag color={statusColor[status]}>{status}</Tag>,
+      render: (status) => (
+        <Tag color={statusColor[status]} style={{ borderRadius: '4px', textTransform: 'uppercase', fontSize: '10px' }}>
+          {status}
+        </Tag>
+      ),
     },
   ];
 
   return (
-    <div>
-      <h2 style={{ marginBottom: 20 }}>📊 Dashboard</h2>
-
-      {/* Info Cards */}
-      <Row gutter={[20, 20]}>
-  {infoCardList.map((card, i) => (
-    <Col span={6} key={i}>
-      <Card
-        bordered={false}
-        hoverable
-        style={{
-          borderRadius: 16,
-          background: card.bg,
-          color: "#fff",
-          boxShadow: "0 10px 25px rgba(0,0,0,0.2)",
-          transition: "0.3s",
-        }}
-        bodyStyle={{ padding: 20 }}
-      >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div>
-            <div style={{ fontSize: 14, opacity: 0.9 }}>{card.title}</div>
-            <div style={{ fontSize: 28, fontWeight: "bold" }}>{card.value}</div>
-          </div>
-
-          <div
-            style={{
-              fontSize: 36,
-              background: "rgba(255,255,255,0.2)",
-              padding: 12,
-              borderRadius: "50%",
-            }}
-          >
-            {card.icon}
-          </div>
+    <ConfigProvider
+      theme={{
+        token: { colorBgContainer: "#141414", colorText: "#fff", colorTextHeading: "#fff" },
+      }}
+    >
+      <div style={{ paddingBottom: 40 }}>
+        <div style={{ marginBottom: 24 }}>
+          <Title level={2} style={{ margin: 0 }}>
+            <SoundOutlined style={{ color: "#ff6600", marginRight: 12 }} />
+            Tổng quan hệ thống
+          </Title>
+          <Text type="secondary">Cập nhật dữ liệu âm thanh realtime</Text>
         </div>
-      </Card>
-    </Col>
-  ))}
-</Row>
 
+        {/* Info Cards - Kính mờ Dark Mode */}
+        <Row gutter={[20, 20]}>
+          {infoCardList.map((card, i) => (
+            <Col xs={24} sm={12} lg={6} key={i}>
+              <Card
+                bordered={false}
+                style={{
+                  background: "#141414",
+                  borderRadius: 16,
+                  border: "1px solid #222",
+                  boxShadow: "0 4px 20px rgba(0,0,0,0.4)",
+                }}
+              >
+                <Statistic
+                  title={<Text style={{ color: "#888", textTransform: "uppercase", fontSize: 12 }}>{card.title}</Text>}
+                  value={card.value || 0}
+                  valueStyle={{ color: "#fff", fontWeight: 800, fontSize: 32 }}
+                  prefix={card.icon}
+                />
+                <div style={{ marginTop: 8 }}>
+                  <Tag color="rgba(82, 196, 26, 0.1)" style={{ color: "#52c41a", border: "none" }}>
+                    <ArrowUpOutlined /> 12%
+                  </Tag>
+                  <Text style={{ color: "#444", fontSize: 12 }}>so với tháng trước</Text>
+                </div>
+              </Card>
+            </Col>
+          ))}
+        </Row>
 
-      {/* Charts */}
-      <Row gutter={[16, 16]} style={{ marginTop: 20 }}>
-        <Col span={12}>
-          <Card title="Đơn hàng theo ngày" bordered={false}>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={ordersData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip />
-                <Line type="monotone" dataKey="orders" stroke="#33a06a" strokeWidth={3} />
-                <Line type="monotone" dataKey="revenue" stroke="#ff7f50" strokeWidth={3} />
-              </LineChart>
-            </ResponsiveContainer>
-          </Card>
-        </Col>
+        {/* Biểu đồ - AreaChart Neon */}
+        <Row gutter={[20, 20]} style={{ marginTop: 24 }}>
+          <Col xs={24} lg={16}>
+            <Card 
+              title="Phân tích Doanh thu & Đơn hàng" 
+              bordered={false} 
+              style={{ borderRadius: 16, background: "#141414", border: "1px solid #222" }}
+            >
+              <ResponsiveContainer width="100%" height={350}>
+                <AreaChart data={ordersData}>
+                  <defs>
+                    <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#ff6600" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#ff6600" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#222" vertical={false} />
+                  <XAxis dataKey="date" stroke="#444" tick={{ fontSize: 12 }} />
+                  <YAxis stroke="#444" tick={{ fontSize: 12 }} />
+                  <Tooltip 
+                    contentStyle={{ background: "#1f1f1f", border: "1px solid #333", borderRadius: 8 }}
+                    itemStyle={{ color: "#ff6600" }}
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="revenue" 
+                    stroke="#ff6600" 
+                    strokeWidth={3} 
+                    fillOpacity={1} 
+                    fill="url(#colorRev)" 
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </Card>
+          </Col>
 
-        <Col span={12}>
-          <Card title="Phân loại sản phẩm" bordered={false}>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie data={productCategories} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} label>
-                  {productCategories.map((entry, index) => (
-                    <Cell key={index} fill={pieColors[index % pieColors.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </Card>
-        </Col>
-      </Row>
+          <Col xs={24} lg={8}>
+            <Card 
+              title="Tỷ trọng thiết bị" 
+              bordered={false} 
+              style={{ borderRadius: 16, background: "#141414", border: "1px solid #222" }}
+            >
+              <ResponsiveContainer width="100%" height={350}>
+                <PieChart>
+                  <Pie 
+                    data={productCategories} 
+                    innerRadius={70} 
+                    outerRadius={100} 
+                    paddingAngle={5} 
+                    dataKey="value"
+                  >
+                    {productCategories.map((entry, index) => (
+                      <Cell key={index} fill={pieColors[index % pieColors.length]} stroke="none" />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+              <div style={{ textAlign: 'center', marginTop: -20 }}>
+                <Text type="secondary">Top 5 danh mục bán chạy</Text>
+              </div>
+            </Card>
+          </Col>
+        </Row>
 
-      {/* Recent Orders */}
-      <Card title="Đơn hàng gần đây" bordered={false} style={{ marginTop: 20 }}>
-        <Table columns={columns} dataSource={recentOrders} rowKey="id" pagination={false} />
-      </Card>
-    </div>
+        {/* Bảng đơn hàng gần đây */}
+        <Card 
+          title="Giao dịch mới nhất" 
+          bordered={false} 
+          style={{ marginTop: 24, borderRadius: 16, background: "#141414", border: "1px solid #222" }}
+          bodyStyle={{ padding: 0 }}
+        >
+          <Table 
+            columns={columns} 
+            dataSource={recentOrders} 
+            rowKey="id" 
+            pagination={false}
+            className="dark-table"
+          />
+        </Card>
+
+        <style>{`
+          .dark-table .ant-table { background: transparent !important; color: #fff !important; }
+          .dark-table .ant-table-thead > tr > th { 
+            background: #1a1a1a !important; 
+            color: #888 !important; 
+            border-bottom: 1px solid #222 !important;
+            font-size: 11px;
+            letter-spacing: 1px;
+          }
+          .dark-table .ant-table-tbody > tr > td { border-bottom: 1px solid #222 !important; }
+          .dark-table .ant-table-tbody > tr:hover > td { background: #1f1f1f !important; }
+          .ant-card-head { border-bottom: 1px solid #222 !important; min-height: 50px !important; }
+          .ant-card-head-title { font-size: 16px !important; font-weight: 600 !important; }
+        `}</style>
+      </div>
+    </ConfigProvider>
   );
 };
 
