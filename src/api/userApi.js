@@ -33,7 +33,6 @@ export const changePassword = async ({ currentPassword, newPassword }) => {
         },
       }
     );
-    console.log(res);
     return res.data;
   } catch (err) {
     // Lấy message trả về từ server nếu có

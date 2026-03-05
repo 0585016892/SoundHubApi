@@ -8,7 +8,9 @@ import {
   SearchOutlined, FilterOutlined, AudioOutlined, ControlOutlined,
   ThunderboltOutlined, InboxOutlined
 } from "@ant-design/icons";
-
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
+import { FileExcelOutlined } from "@ant-design/icons";
 import {
   getProducts, deleteProduct, createProduct, updateProduct,
   updateVariants, deleteVariant, editVariant,
@@ -91,7 +93,47 @@ const Products = () => {
         fetchProducts(currentPage);
     } catch (e) { message.error("Lỗi khi lưu dữ liệu"); }
   };
+const handleExportExcel = () => {
+  if (!products.length) {
+    message.warning("Không có dữ liệu để xuất");
+    return;
+  }
 
+  const data = products.map((p, index) => ({
+    STT: index + 1,
+    "Tên sản phẩm": p.name,
+    "Thương hiệu": p.brand_name,
+    "Danh mục": p.category_name,
+    "Giá": p.price,
+    "Trạng thái": p.status,
+  }));
+
+  const worksheet = XLSX.utils.json_to_sheet(data);
+
+  // auto width cột
+  worksheet["!cols"] = [
+    { wch: 6 },
+    { wch: 30 },
+    { wch: 20 },
+    { wch: 20 },
+    { wch: 15 },
+    { wch: 15 },
+  ];
+
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Products");
+
+  const excelBuffer = XLSX.write(workbook, {
+    bookType: "xlsx",
+    type: "array",
+  });
+
+  const file = new Blob([excelBuffer], {
+    type: "application/octet-stream",
+  });
+
+  saveAs(file, "DanhSachSanPham.xlsx");
+};
   // ================= COLUMNS =================
   const columns = [
     {
@@ -168,10 +210,40 @@ const Products = () => {
             <Text style={{ color: '#888' }}>Quản lý thiết bị âm thanh cao cấp của bạn</Text>
           </Col>
           <Col>
-            <Button type="primary" size="large" icon={<PlusOutlined />} onClick={() => { form.resetFields(); setEditingProduct(null); setShowModal(true); }} style={{ background: '#FF6600', border: 'none', fontWeight: 'bold' }}>
-              TẠO MỚI SẢN PHẨM
-            </Button>
-          </Col>
+  <Space>
+    <Button
+      icon={<FileExcelOutlined />}
+      size="large"
+      onClick={handleExportExcel}
+      style={{
+        background: "#1D6F42",
+        border: "none",
+        color: "#fff",
+        fontWeight: "bold"
+      }}
+    >
+      XUẤT EXCEL
+    </Button>
+
+    <Button
+      type="primary"
+      size="large"
+      icon={<PlusOutlined />}
+      onClick={() => {
+        form.resetFields();
+        setEditingProduct(null);
+        setShowModal(true);
+      }}
+      style={{
+        background: "#FF6600",
+        border: "none",
+        fontWeight: "bold"
+      }}
+    >
+      TẠO MỚI SẢN PHẨM
+    </Button>
+  </Space>
+</Col>
         </Row>
 
         {/* BỘ LỌC (FILTER) */}

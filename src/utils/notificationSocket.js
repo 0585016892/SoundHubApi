@@ -5,7 +5,7 @@ let socket = null;
 
 export function connectNotificationSocket(userId, isAdmin) {
   if (!socket) {
-    socket = io("http://localhost:5000", { // đổi port nếu backend của bạn khác
+    socket = io(process.env.REACT_APP_WEB_URL, { // đổi port nếu backend của bạn khác
       transports: ["websocket"],
     });
   }

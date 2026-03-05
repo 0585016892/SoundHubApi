@@ -38,7 +38,6 @@ export const getProductById = async (id) => {
 export const createProduct = async (productData) => {
 
   try {
-    console.log(productData);
     const res = await axios.post(`${API_URL}/products`, productData, {
       headers: { "Content-Type": "multipart/form-data" }, // nếu có file ảnh
     });

@@ -49,7 +49,6 @@
         socket.disconnect();
       };
     }, [user, selectedUser]);
-  console.log();
 
     /* ================= LOAD CHAT HISTORY ================= */
     const handleSelectUser = async (customer) => {

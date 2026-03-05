@@ -9,7 +9,7 @@ import {
   SoundOutlined,
   CheckCircleOutlined
 } from '@ant-design/icons';
-import { UserContext } from "../context/UserContext";
+import { UserContext } from "../context/UserContext.js";
 import { connectNotificationSocket, fetchUnreadNotifications, markNotificationAsRead } from '../utils/notificationSocket.js';
 
 const { Header: AntHeader } = Layout;
