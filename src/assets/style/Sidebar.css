@@ -1,133 +1,52 @@
-:root {
-  --primary-color: #33a06a;
-  --sidebar-width-open: 240px;
-  --sidebar-width-closed: 70px;
-  --text-color: #555;
-  --active-bg: #e6f4ea;
-  --submenu-indent: 15px;
-}
+ /* 1. Tùy chỉnh thanh cuộn cho Sider */
+          .custom-sidebar .ant-layout-sider-children {
+            display: flex;
+            flex-direction: column;
+            scrollbar-width: thin; /* Cho Firefox */
+            scrollbar-color: #333 transparent; /* Cho Firefox */
+          }
 
-/* =================== Sidebar =================== */
-.sherah-sidebar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  height: 100vh;
-  width: var(--sidebar-width-open);
-  padding-top: 60px;
-  background: #fff;
-  box-shadow: 2px 0 12px rgba(0,0,0,0.05);
-  overflow-y: auto;
-  transition: all 0.3s ease;
-  z-index: 1050;
-}
+          /* Webkit (Chrome, Edge, Safari) */
+          .custom-sidebar .ant-layout-sider-children::-webkit-scrollbar {
+            width: 5px;
+          }
 
-.sherah-sidebar.closed { width: var(--sidebar-width-closed); }
-.sherah-sidebar.closed .item-text,
-.sherah-sidebar.closed .brand-name { display: none; }
+          .custom-sidebar .ant-layout-sider-children::-webkit-scrollbar-track {
+            background: transparent;
+          }
 
-/* =================== Mobile =================== */
-.sherah-sidebar.mobile-open { left: 0; }
-.hamburger-btn {
-  position: fixed;
-  top: 10px;
-  left: 10px;
-  z-index: 1100;
-  font-size: 24px;
-  background: var(--primary-color);
-  color: #fff;
-  border: none;
-  padding: 5px 10px;
-  border-radius: 6px;
-}
+          .custom-sidebar .ant-layout-sider-children::-webkit-scrollbar-thumb {
+            background: #333; 
+            border-radius: 10px;
+          }
 
-/* =================== Logo =================== */
-.sidebar-logo {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  padding: 12px 20px;
-  display: flex;
-  align-items: center;
-  border-bottom: 1px solid #eee;
-}
-.logo-img { width: 32px; height: auto; }
-.brand-name { color: var(--text-color); font-size: 1.2rem; white-space: nowrap; }
+          .custom-sidebar .ant-layout-sider-children:hover::-webkit-scrollbar-thumb {
+            background: #444; /* Sáng lên tí khi hover vào sidebar */
+          }
 
-/* =================== Menu Item =================== */
-.sherah-menu-item {
-  display: flex;
-  align-items: center;
-  padding: 10px 15px;
-  margin: 5px 10px;
-  border-radius: 8px;
-  cursor: pointer;
-  color: var(--text-color);
-  text-decoration: none;
-  transition: all 0.2s;
-}
-.sherah-menu-item:hover {
-  background-color: #f5f5f5;
-  color: var(--primary-color);
-}
-.sherah-menu-item.active {
-  background-color: var(--active-bg);
-  color: var(--primary-color);
-  font-weight: 500;
-}
+          .custom-sidebar .ant-layout-sider-children::-webkit-scrollbar-thumb:hover {
+            background: #ff6600; /* Màu cam khi hover trực tiếp vào scrollbar */
+          }
 
-/* Icon + Badge */
-.menu-icon { margin-right: 12px; transition: color 0.2s; }
-.sherah-menu-item .badge {
-  font-size: 0.7rem;
-  padding: 2px 6px;
-  border-radius: 12px;
-  margin-left: auto;
-  background: #ff4d4f;
-  color: #fff;
-}
+          /* 2. Tinh chỉnh Menu Antd */
+          .ant-menu-dark.ant-menu-inline .ant-menu-sub {
+             background: rgba(0, 0, 0, 0.2) !important;
+          }
+          
+          .ant-menu-item-selected {
+            border-right: 3px solid #ff6600 !important;
+          }
 
-/* =================== Submenu =================== */
-.submenu {
-  display: flex;
-  flex-direction: column;
-  animation: slideDown 0.2s ease forwards;
-}
-.submenu .sherah-menu-item {
-  padding-left: calc(var(--submenu-indent) + 10px);
-}
-.level-1 { padding-left: 10px; }
-.level-2 { padding-left: 25px; }
-.submenu-item:hover .menu-icon { color: var(--primary-color); }
+          .ant-layout-sider-trigger {
+            background: #151515 !important;
+            border-top: 1px solid #222;
+          }
 
-/* Arrow */
-.arrow-icon { margin-left: auto; font-weight: bold; }
-
-/* Animation submenu */
-@keyframes slideDown {
-  0% { opacity: 0; transform: translateY(-5px); }
-  100% { opacity: 1; transform: translateY(0); }
-}
-
-/* =================== Responsive =================== */
-@media(max-width:768px) {
-  .sherah-sidebar {
-    left: -100%;
-    width: var(--sidebar-width-open);
-    transition: left 0.3s ease;
-  }
-  .sherah-sidebar.mobile-open { left: 0; }
-  .hamburger-btn {
-    position: fixed;
-    top: 10px;
-    left: 10px;
-    z-index:1100;
-    background: var(--primary-color);
-    color:#fff;
-    border:none;
-    padding:5px 10px;
-    border-radius:6px;
-    font-size:24px;
-  }
-}
+          /* Hiệu ứng mượt cho icon */
+          .ant-menu-item .anticon {
+            font-size: 16px !important;
+            transition: transform 0.2s;
+          }
+          .ant-menu-item:hover .anticon {
+            transform: scale(1.1);
+          }
