@@ -86,7 +86,7 @@ const ProfilePage = () => {
                 />
               </div>
 
-              <Title level={3} style={{ marginTop: 20, marginBottom: 0 }}>{profile.full_name || "Admin SoundHub"}</Title>
+              <Title level={3} style={{ marginTop: 20, marginBottom: 0 }}>{profile.full_name || "Admin TCD"}</Title>
               <Text type="secondary"><MailOutlined /> {profile.email}</Text>
               
               <Divider style={{ borderColor: '#222' }} />

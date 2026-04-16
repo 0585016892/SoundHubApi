@@ -123,6 +123,7 @@ const EmployeeList = () => {
         message.error("Lỗi cập nhật");
     }
   };
+console.log(employees);
 
   /* ================= COLUMNS ================= */
   const columns = [

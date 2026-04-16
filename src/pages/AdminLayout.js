@@ -53,7 +53,7 @@ const AdminLayout = () => {
           background: '#0d0d0d',
           borderTop: '1px solid #1a1a1a'
         }}>
-          SoundHub Admin ©2026 - Engineered for High Fidelity Management
+          TCD AUDIO Admin ©2026 - Engineered for High Fidelity Management
         </footer>
       </Layout>
     </Layout>

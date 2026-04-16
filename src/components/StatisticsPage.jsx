@@ -78,7 +78,7 @@ const StatisticsPage = () => {
         {/* TOP BAR */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 40 }}>
           <Space direction="vertical" size={0}>
-            <Title level={2} style={{ margin: 0, letterSpacing: 1.5 }}>SOUNDHUB ANALYTICS</Title>
+            <Title level={2} style={{ margin: 0, letterSpacing: 1.5 }}>TCD AUDIO ANALYTICS</Title>
             <Text type="secondary">Chào mừng trở lại, Admin. Đây là hiệu suất hôm nay.</Text>
           </Space>
           <div className="status-badge">● LIVE SYSTEM</div>

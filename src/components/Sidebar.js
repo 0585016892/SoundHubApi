@@ -28,7 +28,7 @@ const menuItems = [
     label: "Quản lý âm thanh",
     children: [
       { key: "/products/danh-sach", icon: <ShoppingOutlined />, label: "Danh sách sản phẩm" },
-      { key: "/products/colors", icon: <SkinOutlined />, label: "Quản lý màu" },
+      // { key: "/products/colors", icon: <SkinOutlined />, label: "Quản lý màu" },
       { key: "/products/category", icon: <PartitionOutlined />, label: "Quản lý danh mục" },
       { key: "/products/brands", icon: <AppstoreAddOutlined />, label: "Quản lý thương hiệu" },
     ],
@@ -110,7 +110,7 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
           {!collapsed && (
             <div style={{ marginTop: 12 }}>
               <Text style={{ color: "#fff", fontWeight: 800, fontSize: 16, letterSpacing: 1.5 }}>
-                SOUND<span style={{ color: "#ff6600" }}>HUB</span>
+                TCD<span style={{ color: "#ff6600" }}>AUDIO</span>
               </Text>
               <br />
               <Text style={{ color: "#555", fontSize: 9, textTransform: "uppercase", fontWeight: 600 }}>

@@ -11,6 +11,7 @@ import {
 } from '@ant-design/icons';
 import { UserContext } from "../context/UserContext.js";
 import { connectNotificationSocket, fetchUnreadNotifications, markNotificationAsRead } from '../utils/notificationSocket.js';
+import logo from "../assets/img/logo2.png";
 
 const { Header: AntHeader } = Layout;
 const { Text } = Typography;
@@ -157,7 +158,7 @@ const Header = () => {
                 <div style={{ color: '#666', fontSize: '11px' }}>Online</div>
               </div>
               <Avatar 
-                src={user?.avatar || "https://api.dicebear.com/7.x/miniavs/svg?seed=1"} 
+                src={user?.avatar || logo} 
                 style={{ border: '2px solid #ff6600', backgroundColor: '#333' }}
                 icon={<UserOutlined />}
               />

@@ -81,11 +81,11 @@ const Login = () => {
             <div style={{ position: "relative", zIndex: 1 }}>
               <SoundOutlined style={{ fontSize: "40px", color: "#ff6600", marginBottom: "16px" }} />
               <Title level={1} style={{ color: "#fff", margin: 0, fontSize: "36px", letterSpacing: "-1px" }}>
-                AUDIO <span style={{ color: "#ff6600" }}>PRO</span>
+                TCD <span style={{ color: "#ff6600" }}>AUDIO</span>
               </Title>
               <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: "16px" }}>
-                The ultimate sound management experience.
-              </Text>
+Trải nghiệm quản lý âm thanh tối ưu.
+            </Text>
             </div>
           </Col>
 
@@ -131,7 +131,11 @@ const Login = () => {
               </Form.Item>
 
               <div style={{ textAlign: "right", marginBottom: "24px" }}>
-                <Button type="link" style={{ color: "#ff6600", padding: 0 }}>
+                <Button
+                  type="link"
+                  style={{ color: "#ff6600", padding: 0 }}
+                  onClick={() => message.info("Quên thì chịu thôi, liên hệ admin nhé!")}
+                >
                   Quên mật mã?
                 </Button>
               </div>
@@ -159,7 +163,7 @@ const Login = () => {
             </Form>
 
             <div style={{ marginTop: "40px", borderTop: "1px solid #222", paddingTop: "20px", textAlign: "center" }}>
-              <Text style={{ color: "#444" }}>Design by Audiophile Admin v2.0</Text>
+              <Text style={{ color: "#444" }}>Design by HT Dev v2.0</Text>
             </div>
           </Col>
         </Row>
