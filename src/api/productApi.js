@@ -127,18 +127,37 @@ export const updateVariants = async (productId, variants) => {
 // 🟢 Sửa biến thể
 export const editVariant = async (variantId, variantData) => {
   try {
-    const formData = new FormData();
+    // CHECK DATA
+    console.log("variantData:", variantData);
 
-    Object.keys(variantData).forEach((key) => {
-      if (key === "image" && variantData[key] instanceof File) {
-        formData.append("image", variantData[key]);
-      } else {
-        formData.append(key, variantData[key]);
-      }
-    });
+    // Nếu đã là FormData thì dùng luôn
+    const formData =
+      variantData instanceof FormData
+        ? variantData
+        : (() => {
+            const fd = new FormData();
+
+            Object.keys(variantData).forEach((key) => {
+              if (key === "image" && variantData[key] instanceof File) {
+                fd.append("image", variantData[key]);
+              } else {
+                fd.append(key, variantData[key]);
+              }
+            });
+
+            return fd;
+          })();
+
+    console.log("===== FORM DATA EDIT VARIANT =====");
+
+    for (let pair of formData.entries()) {
+      console.log(pair[0], ":", pair[1]);
+    }
 
     const res = await axios.put(`${API_URL}/variant/${variantId}`, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
     });
 
     return res.data;
@@ -147,7 +166,6 @@ export const editVariant = async (variantId, variantData) => {
     throw error;
   }
 };
-
 // 🟢 Xóa biến thể
 export const deleteVariant = async (variantId) => {
   try {

@@ -1,12 +1,37 @@
 import React, { useEffect, useState } from "react";
 import {
-  Table, Button, Modal, Form, Input, Select, InputNumber, Upload, Tag, Space,
-  Image, Pagination, Row, Col, message, Typography, ConfigProvider, Card, Divider
+  Table,
+  Button,
+  Modal,
+  Form,
+  Input,
+  Select,
+  InputNumber,
+  Upload,
+  Tag,
+  Space,
+  Image,
+  Pagination,
+  Row,
+  Col,
+  message,
+  Typography,
+  ConfigProvider,
+  Card,
+  Divider,
 } from "antd";
 import {
-  PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, UploadOutlined,
-  SearchOutlined, FilterOutlined, AudioOutlined, ControlOutlined,
-  FileExcelOutlined, SaveOutlined
+  PlusOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  EyeOutlined,
+  UploadOutlined,
+  SearchOutlined,
+  FilterOutlined,
+  AudioOutlined,
+  ControlOutlined,
+  FileExcelOutlined,
+  SaveOutlined,
 } from "@ant-design/icons";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
@@ -14,8 +39,13 @@ import { useNavigate } from "react-router-dom";
 
 // Import API
 import {
-  getProducts, deleteProduct, createProduct, updateProduct,
-  deleteVariant, editVariant, createVariant
+  getProducts,
+  deleteProduct,
+  createProduct,
+  updateProduct,
+  deleteVariant,
+  editVariant,
+  createVariant,
 } from "../api/productApi";
 import { getBrands } from "../api/brandApi";
 import { getCategories } from "../api/categoryApi";
@@ -58,7 +88,12 @@ const Products = () => {
   const fetchProducts = async (page) => {
     setLoading(true);
     try {
-      const filters = { search, category_id: filterCategory, brand_id: filterBrand, status: filterStatus };
+      const filters = {
+        search,
+        category_id: filterCategory,
+        brand_id: filterBrand,
+        status: filterStatus,
+      };
       const res = await getProducts(page, limit, filters);
       setProducts(res.data);
       setCurrentPage(res.currentPage);
@@ -72,67 +107,78 @@ const Products = () => {
 
   const fetchOptions = async () => {
     try {
-      const [b, c, co] = await Promise.all([getBrands(), getCategories(), getCoupons()]);
+      const [b, c, co] = await Promise.all([
+        getBrands(),
+        getCategories(),
+        getCoupons(),
+      ]);
       setBrands(b.data);
       setCategories(c.data);
       setCoupons(co.data);
-    } catch (err) { console.error(err); }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const generateSlug = (text) => {
-    return text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-      .replace(/đ/g, "d").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    return text
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/đ/g, "d")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
   };
 
   // ================= HANDLERS SẢN PHẨM =================
-const handleSaveProduct = async () => {
-  try {
-    const values = await form.validateFields();
-    const formData = new FormData();
+  const handleSaveProduct = async () => {
+    try {
+      const values = await form.validateFields();
+      const formData = new FormData();
 
-    // Duyệt qua các field, chỉ append những field có giá trị
-    Object.keys(values).forEach(key => {
-      if (key !== 'image') {
-        const val = values[key];
-        // Nếu là số 0 hoặc có giá trị thì mới gửi, tránh gửi null/undefined
-        if (val !== undefined && val !== null && val !== "") {
-          formData.append(key, val);
+      // Duyệt qua các field, chỉ append những field có giá trị
+      Object.keys(values).forEach((key) => {
+        if (key !== "image") {
+          const val = values[key];
+          // Nếu là số 0 hoặc có giá trị thì mới gửi, tránh gửi null/undefined
+          if (val !== undefined && val !== null && val !== "") {
+            formData.append(key, val);
+          }
         }
+      });
+
+      // Xử lý ảnh: lấy file từ Ant Design Upload object
+      if (values.image?.fileList && values.image.fileList.length > 0) {
+        formData.append("image", values.image.fileList[0].originFileObj);
       }
-    });
 
-    // Xử lý ảnh: lấy file từ Ant Design Upload object
-    if (values.image?.fileList && values.image.fileList.length > 0) {
-      formData.append("image", values.image.fileList[0].originFileObj);
-    }
+      // Gửi lên API
+      if (editingProduct) {
+        await updateProduct(editingProduct.id, formData);
+        message.success("Cập nhật thành công");
+      } else {
+        await createProduct(formData);
+        message.success("Thêm mới thành công");
+      }
 
-    // Gửi lên API
-    if (editingProduct) {
-      await updateProduct(editingProduct.id, formData);
-      message.success("Cập nhật thành công");
-    } else {
-      await createProduct(formData);
-      message.success("Thêm mới thành công");
+      setShowModal(false);
+      fetchProducts(currentPage);
+    } catch (e) {
+      console.error(e);
+      message.error("Vui lòng điền đủ các trường bắt buộc (Tên, Slug, Giá)");
     }
-    
-    setShowModal(false);
-    fetchProducts(currentPage);
-  } catch (e) {
-    console.error(e);
-    message.error("Vui lòng điền đủ các trường bắt buộc (Tên, Slug, Giá)");
-  }
-};
+  };
   const handleDelete = async (id) => {
     Modal.confirm({
-      title: 'Xác nhận xóa',
-      content: 'Bạn có chắc chắn muốn xóa sản phẩm này?',
-      okText: 'Xóa',
-      okType: 'danger',
+      title: "Xác nhận xóa",
+      content: "Bạn có chắc chắn muốn xóa sản phẩm này?",
+      okText: "Xóa",
+      okType: "danger",
       onOk: async () => {
         await deleteProduct(id);
         message.success("Đã xóa sản phẩm");
         fetchProducts(currentPage);
-      }
+      },
     });
   };
 
@@ -150,14 +196,24 @@ const handleSaveProduct = async () => {
   };
 
   const addVariantRow = () => {
-    setVariants([...variants, { 
-      name_variant: "", color: "", power: "", 
-      connection_type: "Bluetooth", has_microphone: 0, 
-      price: 0, stock: 0, isNew: true 
-    }]);
+    setVariants([
+      ...variants,
+      {
+        name_variant: "",
+        color: "",
+        power: "",
+        connection_type: "Bluetooth",
+        has_microphone: 0,
+        price: 0,
+        stock: 0,
+        isNew: true,
+      },
+    ]);
   };
 
   const handleUpdateVariant = async (v, index) => {
+    console.log("Gọi handleUpdateVariant với dữ liệu:", v);
+    console.log("Dữ liệu editingProduct:", editingProduct);
     if (!v.name_variant || v.price === undefined) {
       return message.warning("Vui lòng nhập tên và giá biến thể");
     }
@@ -173,7 +229,7 @@ const handleSaveProduct = async () => {
       formData.append("has_microphone", v.has_microphone ? 1 : 0);
       formData.append("price", v.price || 0);
       formData.append("stock", v.stock || 0);
-      
+
       if (v.rawFile) {
         formData.append("image", v.rawFile);
       }
@@ -202,21 +258,21 @@ const handleSaveProduct = async () => {
 
   const handleRemoveVariant = async (id, index) => {
     if (!id) {
-        setVariants(variants.filter((_, i) => i !== index));
-        return;
+      setVariants(variants.filter((_, i) => i !== index));
+      return;
     }
     Modal.confirm({
-        title: 'Xác nhận xóa',
-        content: 'Hành động này sẽ xóa vĩnh viễn biến thể này!',
-        okText: 'Xóa',
-        okType: 'danger',
-        onOk: async () => {
-            await deleteVariant(id);
-            message.success("Đã xóa");
-            const newVariants = variants.filter((_, i) => i !== index);
-            setVariants(newVariants);
-            fetchProducts(currentPage);
-        }
+      title: "Xác nhận xóa",
+      content: "Hành động này sẽ xóa vĩnh viễn biến thể này!",
+      okText: "Xóa",
+      okType: "danger",
+      onOk: async () => {
+        await deleteVariant(id);
+        message.success("Đã xóa");
+        const newVariants = variants.filter((_, i) => i !== index);
+        setVariants(newVariants);
+        fetchProducts(currentPage);
+      },
     });
   };
 
@@ -232,7 +288,10 @@ const handleSaveProduct = async () => {
     const worksheet = XLSX.utils.json_to_sheet(data);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Products");
-    const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: "xlsx",
+      type: "array",
+    });
     saveAs(new Blob([excelBuffer]), "DanhSachSanPham.xlsx");
   };
 
@@ -242,111 +301,223 @@ const handleSaveProduct = async () => {
       key: "name",
       render: (_, record) => (
         <Space>
-          <Image 
-            width={50} 
-            src={record.image ? `${WEB_URL}/uploads/products/${record.image}` : "https://via.placeholder.com/50"} 
-            style={{ borderRadius: 6, border: '1px solid #333', objectFit: 'cover' }} 
+          <Image
+            width={50}
+            src={
+              record.image
+                ? `${WEB_URL}/uploads/products/${record.image}`
+                : "https://via.placeholder.com/50"
+            }
+            style={{
+              borderRadius: 6,
+              border: "1px solid #333",
+              objectFit: "cover",
+            }}
           />
           <div>
-            <Text style={{ color: '#FFF', fontWeight: '600', display: 'block' }}>{record.name}</Text>
-            <Text style={{ color: '#888', fontSize: '12px' }}>{record.brand_name} | {record.category_name}</Text>
+            <Text
+              style={{ color: "#FFF", fontWeight: "600", display: "block" }}
+            >
+              {record.name}
+            </Text>
+            <Text style={{ color: "#888", fontSize: "12px" }}>
+              {record.brand_name} | {record.category_name}
+            </Text>
           </div>
         </Space>
-      )
+      ),
     },
     {
       title: "GIÁ NIÊM YẾT",
       dataIndex: "price",
-      render: (p) => <Text style={{ color: '#FF6600', fontWeight: 'bold' }}>{Number(p).toLocaleString()}₫</Text>
+      render: (p) => (
+        <Text style={{ color: "#FF6600", fontWeight: "bold" }}>
+          {Number(p).toLocaleString()}₫
+        </Text>
+      ),
     },
     {
       title: "TRẠNG THÁI",
       dataIndex: "status",
       render: (s) => (
-        <Tag color={s === "active" ? "#5af30d" : "#333"} style={{ color: s === "active" ? '#000' : '#888', border: 'none' }}>
+        <Tag
+          color={s === "active" ? "#5af30d" : "#333"}
+          style={{ color: s === "active" ? "#000" : "#888", border: "none" }}
+        >
           {s?.toUpperCase()}
         </Tag>
-      )
+      ),
     },
     {
       title: "HÀNH ĐỘNG",
       key: "actions",
       render: (_, record) => (
         <Space>
-          <Button ghost size="small" icon={<EyeOutlined />} onClick={() => navigate(`/productDetail/${record.id}`)} />
-          <Button ghost size="small" style={{ color: '#40A9FF', borderColor: '#40A9FF' }} icon={<EditOutlined />} onClick={() => {
-             setEditingProduct(record);
-             form.setFieldsValue(record);
-             setShowModal(true);
-          }} />
-          <Button ghost size="small" style={{ color: '#FF6600', borderColor: '#FF6600' }} icon={<PlusOutlined />} onClick={() => openVariantModal(record)} />
-          <Button danger ghost size="small" icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)} />
+          <Button
+            ghost
+            size="small"
+            icon={<EyeOutlined />}
+            onClick={() => navigate(`/productDetail/${record.id}`)}
+          />
+          <Button
+            ghost
+            size="small"
+            style={{ color: "#40A9FF", borderColor: "#40A9FF" }}
+            icon={<EditOutlined />}
+            onClick={() => {
+              setEditingProduct(record);
+              form.setFieldsValue(record);
+              setShowModal(true);
+            }}
+          />
+          <Button
+            ghost
+            size="small"
+            style={{ color: "#FF6600", borderColor: "#FF6600" }}
+            icon={<PlusOutlined />}
+            onClick={() => openVariantModal(record)}
+          />
+          <Button
+            danger
+            ghost
+            size="small"
+            icon={<DeleteOutlined />}
+            onClick={() => handleDelete(record.id)}
+          />
         </Space>
-      )
-    }
+      ),
+    },
   ];
 
   return (
-<ConfigProvider
-  theme={{
-    token: { 
-      colorBgContainer: "#141414", 
-      colorText: "#FFFFFF", 
-      colorPrimary: "#FF6600", 
-      colorBorder: "#333",
-      colorTextPlaceholder: "#888" // Màu cho chữ gợi ý
-    },
-    components: { 
-      Table: { headerBg: "#1A1A1A", rowHoverBg: "#1F1F1F" },
-      Input: { colorBgContainer: "#0A0A0A", colorText: "#FFF" },
-      Select: { 
-        colorBgContainer: "#0A0A0A", 
-        colorText: "#FFF", 
-        colorTextPlaceholder: "#888",
-        controlItemBgActive: "#333" // Màu nền khi chọn item
-      },
-      Modal: { headerBg: "#1A1A1A", contentBg: "#141414" }
-    }
-  }}
->
-      <div style={{ padding: '24px', background: '#0A0A0A', minHeight: '100vh' }}>
+    <ConfigProvider
+      theme={{
+        token: {
+          colorBgContainer: "#141414",
+          colorText: "#FFFFFF",
+          colorPrimary: "#FF6600",
+          colorBorder: "#333",
+          colorTextPlaceholder: "#888", // Màu cho chữ gợi ý
+        },
+        components: {
+          Table: { headerBg: "#1A1A1A", rowHoverBg: "#1F1F1F" },
+          Input: { colorBgContainer: "#0A0A0A", colorText: "#FFF" },
+          Select: {
+            colorBgContainer: "#0A0A0A",
+            colorText: "#FFF",
+            colorTextPlaceholder: "#888",
+            controlItemBgActive: "#333", // Màu nền khi chọn item
+          },
+          Modal: { headerBg: "#1A1A1A", contentBg: "#141414" },
+        },
+      }}
+    >
+      <div
+        style={{ padding: "24px", background: "#0A0A0A", minHeight: "100vh" }}
+      >
         {/* HEADER */}
-        <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
+        <Row
+          justify="space-between"
+          align="middle"
+          style={{ marginBottom: 24 }}
+        >
           <Col>
-            <Title level={2} style={{ color: '#FFF', margin: 0 }}>
-              <AudioOutlined style={{ color: '#FF6600', marginRight: 12 }} />
+            <Title level={2} style={{ color: "#FFF", margin: 0 }}>
+              <AudioOutlined style={{ color: "#FF6600", marginRight: 12 }} />
               Quản Lý Kho Sản Phẩm
             </Title>
           </Col>
           <Col>
             <Space>
-              <Button icon={<FileExcelOutlined />} onClick={handleExportExcel} style={{ background: "#1D6F42", color: "#fff", border: "none" }}>XUẤT EXCEL</Button>
-              <Button type="primary" size="large" icon={<PlusOutlined />} onClick={() => { form.resetFields(); setEditingProduct(null); setShowModal(true); }}>TẠO MỚI</Button>
+              <Button
+                icon={<FileExcelOutlined />}
+                onClick={handleExportExcel}
+                style={{ background: "#1D6F42", color: "#fff", border: "none" }}
+              >
+                XUẤT EXCEL
+              </Button>
+              <Button
+                type="primary"
+                size="large"
+                icon={<PlusOutlined />}
+                onClick={() => {
+                  form.resetFields();
+                  setEditingProduct(null);
+                  setShowModal(true);
+                }}
+              >
+                TẠO MỚI
+              </Button>
             </Space>
           </Col>
         </Row>
 
         {/* BỘ LỌC */}
-        <Card style={{ marginBottom: 20, background: '#141414', border: '1px solid #222' }}>
+        <Card
+          style={{
+            marginBottom: 20,
+            background: "#141414",
+            border: "1px solid #222",
+          }}
+        >
           <Row gutter={12}>
-            <Col span={6}><Input prefix={<SearchOutlined />} placeholder="Tìm tên sản phẩm..." onChange={e => setSearch(e.target.value)} /></Col>
+            <Col span={6}>
+              <Input
+                prefix={<SearchOutlined />}
+                placeholder="Tìm tên sản phẩm..."
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </Col>
             <Col span={4}>
-              <Select placeholder="Danh mục" style={{width: '100%'}} allowClear onChange={setFilterCategory}>
-                {categories.map(c => <Option key={c.id} value={c.id}>{c.name}</Option>)}
+              <Select
+                placeholder="Danh mục"
+                style={{ width: "100%" }}
+                allowClear
+                onChange={setFilterCategory}
+              >
+                {categories.map((c) => (
+                  <Option key={c.id} value={c.id}>
+                    {c.name}
+                  </Option>
+                ))}
               </Select>
             </Col>
             <Col span={4}>
-              <Select placeholder="Thương hiệu" style={{width: '100%'}} allowClear onChange={setFilterBrand}>
-                {brands.map(b => <Option key={b.id} value={b.id}>{b.name}</Option>)}
+              <Select
+                placeholder="Thương hiệu"
+                style={{ width: "100%" }}
+                allowClear
+                onChange={setFilterBrand}
+              >
+                {brands.map((b) => (
+                  <Option key={b.id} value={b.id}>
+                    {b.name}
+                  </Option>
+                ))}
               </Select>
             </Col>
             <Col span={4}>
-              <Select placeholder="Trạng thái" style={{width: '100%'}} allowClear onChange={setFilterStatus}>
+              <Select
+                placeholder="Trạng thái"
+                style={{ width: "100%" }}
+                allowClear
+                onChange={setFilterStatus}
+              >
                 <Option value="active">Active</Option>
                 <Option value="inactive">Inactive</Option>
               </Select>
             </Col>
-            <Col span={6}><Button block type="primary" ghost icon={<FilterOutlined />} onClick={() => fetchProducts(1)}>ÁP DỤNG BỘ LỌC</Button></Col>
+            <Col span={6}>
+              <Button
+                block
+                type="primary"
+                ghost
+                icon={<FilterOutlined />}
+                onClick={() => fetchProducts(1)}
+              >
+                ÁP DỤNG BỘ LỌC
+              </Button>
+            </Col>
           </Row>
         </Card>
 
@@ -359,8 +530,17 @@ const handleSaveProduct = async () => {
           pagination={false}
           expandable={{
             expandedRowRender: (record) => (
-              <div style={{ padding: '15px', background: '#000', borderRadius: 8, border: '1px solid #222' }}>
-                <Title level={5} style={{ color: '#FF6600', marginBottom: 12 }}>Biến thể sản phẩm</Title>
+              <div
+                style={{
+                  padding: "15px",
+                  background: "#000",
+                  borderRadius: 8,
+                  border: "1px solid #222",
+                }}
+              >
+                <Title level={5} style={{ color: "#FF6600", marginBottom: 12 }}>
+                  Biến thể sản phẩm
+                </Title>
                 <Table
                   rowKey="id"
                   size="small"
@@ -371,17 +551,33 @@ const handleSaveProduct = async () => {
                     { title: "Màu", dataIndex: "color" },
                     { title: "CS", dataIndex: "power" },
                     { title: "Kết nối", dataIndex: "connection_type" },
-                    { title: "Giá", render: v => `${Number(v.price).toLocaleString()}₫` },
-                    { title: "Kho", dataIndex: "stock" }
+                    {
+                      title: "Giá",
+                      render: (v) => `${Number(v.price).toLocaleString()}₫`,
+                    },
+                    { title: "Kho", dataIndex: "stock" },
                   ]}
                 />
               </div>
             ),
-            expandIcon: ({ expanded, onExpand, record }) => <ControlOutlined style={{ color: expanded ? '#FF6600' : '#555', cursor: 'pointer' }} onClick={e => onExpand(record, e)} />
+            expandIcon: ({ expanded, onExpand, record }) => (
+              <ControlOutlined
+                style={{
+                  color: expanded ? "#FF6600" : "#555",
+                  cursor: "pointer",
+                }}
+                onClick={(e) => onExpand(record, e)}
+              />
+            ),
           }}
         />
-        <div style={{ marginTop: 20, textAlign: 'right' }}>
-          <Pagination current={currentPage} total={totalPages * limit} pageSize={limit} onChange={setCurrentPage} />
+        <div style={{ marginTop: 20, textAlign: "right" }}>
+          <Pagination
+            current={currentPage}
+            total={totalPages * limit}
+            pageSize={limit}
+            onChange={setCurrentPage}
+          />
         </div>
 
         {/* MODAL SẢN PHẨM */}
@@ -394,78 +590,219 @@ const handleSaveProduct = async () => {
         >
           <Form form={form} layout="vertical" style={{ marginTop: 20 }}>
             <Row gutter={16}>
-              <Col span={12}><Form.Item name="name" label="Tên sản phẩm" rules={[{required: true}]}><Input placeholder="Nhập tên..." onChange={e => form.setFieldsValue({slug: generateSlug(e.target.value)})} /></Form.Item></Col>
-              <Col span={12}><Form.Item name="slug" label="Slug"><Input placeholder="auto-generate-slug" /></Form.Item></Col>
-              <Col span={12}><Form.Item name="brand_id" label="Thương hiệu"><Select placeholder="Chọn thương hiệu">{brands.map(b => <Option key={b.id} value={b.id}>{b.name}</Option>)}</Select></Form.Item></Col>
-              <Col span={12}><Form.Item name="category_id" label="Danh mục"><Select placeholder="Chọn danh mục">{categories.map(c => <Option key={c.id} value={c.id}>{c.name}</Option>)}</Select></Form.Item></Col>
-              <Col span={8}><Form.Item name="price" label="Giá niêm yết"><InputNumber style={{width: '100%'}} formatter={v => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')} /></Form.Item></Col>
-              <Col span={8}><Form.Item name="status" label="Trạng thái"><Select defaultValue="active"><Option value="active">Active</Option><Option value="inactive">Inactive</Option></Select></Form.Item></Col>
-              <Col span={8}><Form.Item name="coupon_id" label="Mã giảm giá"><Select placeholder="Chọn mã giảm giá">{coupons.map(c => <Option key={c.id} value={c.id}>{c.code}</Option>)}</Select></Form.Item></Col>
+              <Col span={12}>
+                <Form.Item
+                  name="name"
+                  label="Tên sản phẩm"
+                  rules={[{ required: true }]}
+                >
+                  <Input
+                    placeholder="Nhập tên..."
+                    onChange={(e) =>
+                      form.setFieldsValue({
+                        slug: generateSlug(e.target.value),
+                      })
+                    }
+                  />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item name="slug" label="Slug">
+                  <Input placeholder="auto-generate-slug" />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item name="brand_id" label="Thương hiệu">
+                  <Select placeholder="Chọn thương hiệu">
+                    {brands.map((b) => (
+                      <Option key={b.id} value={b.id}>
+                        {b.name}
+                      </Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item name="category_id" label="Danh mục">
+                  <Select placeholder="Chọn danh mục">
+                    {categories.map((c) => (
+                      <Option key={c.id} value={c.id}>
+                        {c.name}
+                      </Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item name="price" label="Giá niêm yết">
+                  <InputNumber
+                    style={{ width: "100%" }}
+                    formatter={(v) =>
+                      `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+                    }
+                  />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item name="status" label="Trạng thái">
+                  <Select defaultValue="active">
+                    <Option value="active">Active</Option>
+                    <Option value="inactive">Inactive</Option>
+                  </Select>
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item name="coupon_id" label="Mã giảm giá">
+                  <Select placeholder="Chọn mã giảm giá">
+                    {coupons.map((c) => (
+                      <Option key={c.id} value={c.id}>
+                        {c.code}
+                      </Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+              </Col>
               <Col span={8}>
                 <Form.Item name="image" label="Ảnh đại diện">
-                  <Upload maxCount={1} beforeUpload={() => false} listType="picture">
-                    <Button icon={<UploadOutlined />} block>Chọn file</Button>
+                  <Upload
+                    maxCount={1}
+                    beforeUpload={() => false}
+                    listType="picture"
+                  >
+                    <Button icon={<UploadOutlined />} block>
+                      Chọn file
+                    </Button>
                   </Upload>
                 </Form.Item>
               </Col>
-              <Col span={24}><Form.Item name="description" label="Mô tả sản phẩm"><Input.TextArea rows={4} placeholder="Thông tin chi tiết..." /></Form.Item></Col>
+              <Col span={24}>
+                <Form.Item name="description" label="Mô tả sản phẩm">
+                  <Input.TextArea
+                    rows={4}
+                    placeholder="Thông tin chi tiết..."
+                  />
+                </Form.Item>
+              </Col>
             </Row>
           </Form>
         </Modal>
 
         {/* MODAL BIẾN THỂ */}
         <Modal
-          title={<Title level={4} style={{ color: '#FF6600', margin: 0 }}>BIẾN THỂ: {editingProduct?.name.toUpperCase()}</Title>}
+          title={
+            <Title level={4} style={{ color: "#FF6600", margin: 0 }}>
+              BIẾN THỂ: {editingProduct?.name.toUpperCase()}
+            </Title>
+          }
           open={showVariantModal}
-          footer={[<Button key="close" type="primary" onClick={() => setShowVariantModal(false)}>Hoàn tất & Đóng</Button>]}
+          footer={[
+            <Button
+              key="close"
+              type="primary"
+              onClick={() => setShowVariantModal(false)}
+            >
+              Hoàn tất & Đóng
+            </Button>,
+          ]}
           width={1100}
         >
-          <Button 
-            type="dashed" 
-            block 
-            icon={<PlusOutlined />} 
-            onClick={addVariantRow} 
-            style={{ marginBottom: 20, height: 45, color: '#FF6600', borderColor: '#FF6600' }}
+          <Button
+            type="dashed"
+            block
+            icon={<PlusOutlined />}
+            onClick={addVariantRow}
+            style={{
+              marginBottom: 20,
+              height: 45,
+              color: "#FF6600",
+              borderColor: "#FF6600",
+            }}
           >
             THÊM BIẾN THỂ MỚI
           </Button>
 
-          <div style={{ maxHeight: '550px', overflowY: 'auto', paddingRight: '8px' }}>
+          <div
+            style={{
+              maxHeight: "550px",
+              overflowY: "auto",
+              paddingRight: "8px",
+            }}
+          >
             {variants.map((v, i) => (
-              <Card 
-                size="small" 
-                key={i} 
-                style={{ 
-                  marginBottom: 16, 
-                  background: '#1A1A1A', 
-                  border: v.id ? '1px solid #333' : '1px dashed #FF6600' 
+              <Card
+                size="small"
+                key={i}
+                style={{
+                  marginBottom: 16,
+                  background: "#1A1A1A",
+                  border: v.id ? "1px solid #333" : "1px dashed #FF6600",
                 }}
               >
                 <Row gutter={[12, 12]}>
                   {/* Row 1 */}
                   <Col span={6}>
-                    <Text size="small" style={{ color: '#888' }}>Tên phiên bản</Text>
-                    <Input value={v.name_variant} onChange={e => updateVariantState(i, 'name_variant', e.target.value)} placeholder="VD: Bản Pro" />
+                    <Text size="small" style={{ color: "#888" }}>
+                      Tên phiên bản
+                    </Text>
+                    <Input
+                      value={v.name_variant}
+                      onChange={(e) =>
+                        updateVariantState(i, "name_variant", e.target.value)
+                      }
+                      placeholder="VD: Bản Pro"
+                    />
                   </Col>
                   <Col span={4}>
-                    <Text size="small" style={{ color: '#888' }}>Màu sắc</Text>
-                    <Input value={v.color} onChange={e => updateVariantState(i, 'color', e.target.value)} placeholder="VD: Đen" />
+                    <Text size="small" style={{ color: "#888" }}>
+                      Màu sắc
+                    </Text>
+                    <Input
+                      value={v.color}
+                      onChange={(e) =>
+                        updateVariantState(i, "color", e.target.value)
+                      }
+                      placeholder="VD: Đen"
+                    />
                   </Col>
                   <Col span={4}>
-                    <Text size="small" style={{ color: '#888' }}>Công suất</Text>
-                    <Input value={v.power} onChange={e => updateVariantState(i, 'power', e.target.value)} placeholder="VD: 20W" />
+                    <Text size="small" style={{ color: "#888" }}>
+                      Công suất
+                    </Text>
+                    <Input
+                      value={v.power}
+                      onChange={(e) =>
+                        updateVariantState(i, "power", e.target.value)
+                      }
+                      placeholder="VD: 20W"
+                    />
                   </Col>
                   <Col span={5}>
-                    <Text size="small" style={{ color: '#888' }}>Kết nối</Text>
-                    <Select value={v.connection_type} style={{ width: '100%' }} onChange={val => updateVariantState(i, 'connection_type', val)}>
+                    <Text size="small" style={{ color: "#888" }}>
+                      Kết nối
+                    </Text>
+                    <Select
+                      value={v.connection_type}
+                      style={{ width: "100%" }}
+                      onChange={(val) =>
+                        updateVariantState(i, "connection_type", val)
+                      }
+                    >
                       <Option value="Bluetooth">Bluetooth</Option>
                       <Option value="Wired">Wired</Option>
                       <Option value="Wireless">Wireless 2.4G</Option>
                     </Select>
                   </Col>
                   <Col span={5}>
-                    <Text size="small" style={{ color: '#888' }}>Microphone</Text>
-                    <Select value={v.has_microphone} style={{ width: '100%' }} onChange={val => updateVariantState(i, 'has_microphone', val)}>
+                    <Text size="small" style={{ color: "#888" }}>
+                      Microphone
+                    </Text>
+                    <Select
+                      value={v.has_microphone}
+                      style={{ width: "100%" }}
+                      onChange={(val) =>
+                        updateVariantState(i, "has_microphone", val)
+                      }
+                    >
                       <Option value={1}>Có tích hợp</Option>
                       <Option value={0}>Không</Option>
                     </Select>
@@ -473,42 +810,69 @@ const handleSaveProduct = async () => {
 
                   {/* Row 2 */}
                   <Col span={6}>
-                    <Text size="small" style={{ color: '#888' }}>Giá bán (₫)</Text>
-                    <InputNumber 
-                      style={{ width: '100%' }} 
-                      value={v.price} 
-                      formatter={val => `${val}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                      onChange={val => updateVariantState(i, 'price', val)} 
+                    <Text size="small" style={{ color: "#888" }}>
+                      Giá bán (₫)
+                    </Text>
+                    <InputNumber
+                      style={{ width: "100%" }}
+                      value={v.price}
+                      formatter={(val) =>
+                        `${val}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+                      }
+                      onChange={(val) => updateVariantState(i, "price", val)}
                     />
                   </Col>
                   <Col span={4}>
-                    <Text size="small" style={{ color: '#888' }}>Số lượng tồn</Text>
-                    <InputNumber style={{ width: '100%' }} value={v.stock} onChange={val => updateVariantState(i, 'stock', val)} />
+                    <Text size="small" style={{ color: "#888" }}>
+                      Số lượng tồn
+                    </Text>
+                    <InputNumber
+                      style={{ width: "100%" }}
+                      value={v.stock}
+                      onChange={(val) => updateVariantState(i, "stock", val)}
+                    />
                   </Col>
                   <Col span={8}>
-                    <Text size="small" style={{ color: '#888' }}>Ảnh biến thể</Text>
-                    <Upload 
-                      maxCount={1} 
-                      beforeUpload={file => { updateVariantState(i, 'rawFile', file); return false; }} 
+                    <Text size="small" style={{ color: "#888" }}>
+                      Ảnh biến thể
+                    </Text>
+                    <Upload
+                      maxCount={1}
+                      beforeUpload={(file) => {
+                        updateVariantState(i, "rawFile", file);
+                        return false;
+                      }}
                       showUploadList={true}
                     >
-                      <Button icon={<UploadOutlined />} style={{ width: '100%' }}>{v.id ? "Thay đổi" : "Chọn ảnh"}</Button>
+                      <Button
+                        icon={<UploadOutlined />}
+                        style={{ width: "100%" }}
+                      >
+                        {v.id ? "Thay đổi" : "Chọn ảnh"}
+                      </Button>
                     </Upload>
                   </Col>
-                  <Col span={6} style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end' }}>
+                  <Col
+                    span={6}
+                    style={{
+                      display: "flex",
+                      alignItems: "flex-end",
+                      justifyContent: "flex-end",
+                    }}
+                  >
                     <Space>
-                      <Button 
-                        type="primary" 
+                      <Button
+                        type="primary"
                         loading={variantLoading === i}
-                        icon={<SaveOutlined />} 
+                        icon={<SaveOutlined />}
                         onClick={() => handleUpdateVariant(v, i)}
                       >
                         {v.id ? "Cập nhật" : "Lưu mới"}
                       </Button>
-                      <Button 
-                        danger 
+                      <Button
+                        danger
                         ghost
-                        icon={<DeleteOutlined />} 
+                        icon={<DeleteOutlined />}
                         onClick={() => handleRemoveVariant(v.id, i)}
                       >
                         Xóa
