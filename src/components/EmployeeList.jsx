@@ -1,20 +1,44 @@
 import React, { useEffect, useState } from "react";
 import {
-  Table, Button, Modal, Form, Input, Pagination, Upload, 
-  Avatar, Tag, Select, Space, Card, message, Row, Col, 
-  Typography, ConfigProvider, theme
+  Table,
+  Button,
+  Modal,
+  Form,
+  Input,
+  Pagination,
+  Upload,
+  Avatar,
+  Tag,
+  Select,
+  Space,
+  Row,
+  Col,
+  Typography,
+  ConfigProvider,
+  theme,
 } from "antd";
-import { 
-  PlusOutlined, EditOutlined, DeleteOutlined, 
-  UploadOutlined, SearchOutlined, TeamOutlined,
-  UserOutlined, MailOutlined, PhoneOutlined
+import {
+  PlusOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  SearchOutlined,
+  TeamOutlined,
+  UserOutlined,
+  MailOutlined,
+  PhoneOutlined,
+  SolutionOutlined,
+  LockOutlined,
+  HomeOutlined,
+  DeploymentUnitOutlined,
 } from "@ant-design/icons";
+import { motion } from "framer-motion";
+import toast from "react-hot-toast";
 import {
   getEmployees,
   updateEmployee,
   deleteEmployee,
   createEmployee,
-  updateEmployeeStatus
+  updateEmployeeStatus,
 } from "../api/employeeApi";
 
 const { Title, Text } = Typography;
@@ -41,7 +65,7 @@ const EmployeeList = () => {
       setCurrentPage(data.currentPage || 1);
       setTotalPages(data.totalPages || 1);
     } catch {
-      message.error("Lỗi kết nối danh sách nhân sự");
+      toast.error("Lỗi kết nối danh sách nhân sự");
     } finally {
       setLoading(false);
     }
@@ -63,8 +87,8 @@ const EmployeeList = () => {
     setIsNew(false);
     setSelectedEmployee(emp);
     form.setFieldsValue({
-        ...emp,
-        avatar: null // Reset upload field
+      ...emp,
+      avatar: null,
     });
     setShowModal(true);
   };
@@ -73,9 +97,9 @@ const EmployeeList = () => {
     try {
       const values = await form.validateFields();
       const formData = new FormData();
-      
+
       Object.keys(values).forEach((k) => {
-        if (values[k] && k !== 'avatar') formData.append(k, values[k]);
+        if (values[k] && k !== "avatar") formData.append(k, values[k]);
       });
 
       if (values.avatar?.file) {
@@ -84,31 +108,55 @@ const EmployeeList = () => {
 
       if (isNew) {
         await createEmployee(formData);
-        message.success("Đã thêm nhân viên mới");
+        toast.success("Đã đăng ký tài khoản nhân viên mới");
       } else {
         await updateEmployee(selectedEmployee.id, formData);
-        message.success("Cập nhật thông tin thành công");
+        toast.success("Cập nhật hồ sơ nhân sự thành công");
       }
 
       setShowModal(false);
       fetchEmployees(currentPage, keyword);
     } catch {
-      message.error("Vui lòng kiểm tra lại thông tin");
+      toast.error("Vui lòng kiểm tra lại thông tin biểu mẫu");
     }
   };
 
   const handleDelete = async (emp) => {
-    if (emp.role === "admin") return message.error("Không thể xóa tài khoản Quản trị viên!");
+    if (emp.role === "admin")
+      return toast.error(
+        "Cảnh báo an ninh: Không thể gỡ bỏ tài khoản Quản trị viên tối cao!",
+      );
 
     Modal.confirm({
-      title: <span style={{ color: '#fff' }}>Xác nhận xóa nhân viên?</span>,
-      content: <Text style={{ color: '#888' }}>Nhân viên: {emp.full_name}</Text>,
+      title: (
+        <span className="modal-danger-title">⚠️ THU HỒI HỒ SƠ NHÂN SỰ</span>
+      ),
+      content: (
+        <div style={{ marginTop: 10 }}>
+          <Text style={{ color: "#aaa" }}>
+            Hệ thống sẽ tiến hành xóa vĩnh viễn quyền truy cập của nhân
+            viên:{" "}
+          </Text>
+          <strong
+            style={{
+              color: "#fff",
+              display: "block",
+              marginTop: 5,
+              fontSize: 14,
+            }}
+          >
+            {emp.full_name}
+          </strong>
+        </div>
+      ),
       centered: true,
-      okText: 'XÓA',
-      okButtonProps: { danger: true, ghost: true },
+      okText: "XÓA VĨNH VIỄN",
+      cancelText: "QUAY LẠI",
+      okButtonProps: { danger: true, className: "btn-modal-danger-ok" },
+      cancelButtonProps: { className: "btn-modal-danger-cancel" },
       onOk: async () => {
         await deleteEmployee(emp.id);
-        message.success("Đã xóa nhân viên khỏi hệ thống");
+        toast.success("Đã gỡ tài khoản khỏi danh bạ nội bộ");
         fetchEmployees(currentPage, keyword);
       },
     });
@@ -116,73 +164,117 @@ const EmployeeList = () => {
 
   const handleStatusChange = async (emp, status) => {
     try {
-        await updateEmployeeStatus(emp.id, status);
-        message.success("Đã cập nhật trạng thái");
-        fetchEmployees(currentPage, keyword);
+      await updateEmployeeStatus(emp.id, status);
+      toast.success("Cập nhật trạng thái phân quyền thành công");
+      fetchEmployees(currentPage, keyword);
     } catch {
-        message.error("Lỗi cập nhật");
+      toast.error("Lỗi cập nhật trạng thái");
     }
   };
-console.log(employees);
 
   /* ================= COLUMNS ================= */
   const columns = [
     {
-      title: <Text style={{ color: "#888" }}>THÀNH VIÊN</Text>,
+      title: "DANH TÍNH THÀNH VIÊN",
       render: (_, record) => (
-        <Space>
-          {record.avatar ? (
-            <Avatar src={`${WEB_URL}/uploads/products/${record.avatar}`} border="1px solid #333" />
-          ) : (
-            <Avatar icon={<UserOutlined />} style={{ background: '#1a1a1a', color: '#ff6600' }} />
-          )}
+        <Space size="middle" className="customer-profile-cell">
+          <div className="avatar-glow-wrapper">
+            {record.avatar ? (
+              <Avatar
+                src={`${WEB_URL}/uploads/products/${record.avatar}`}
+                size={36}
+              />
+            ) : (
+              <Avatar
+                icon={<UserOutlined />}
+                size={36}
+                style={{ background: "#161616", color: "#ff5302" }}
+              />
+            )}
+          </div>
           <div>
-            <Text style={{ color: "#fff", fontWeight: "600", display: 'block' }}>{record.full_name}</Text>
-            <Text style={{ color: "#555", fontSize: 11 }}>{record.position || "Staff"}</Text>
+            <span className="c-name-main">{record.full_name}</span>
+            <span className="c-id-sub">
+              {record.position || "Staff Position"}
+            </span>
           </div>
         </Space>
       ),
     },
-    { 
-        title: <Text style={{ color: "#888" }}>LIÊN HỆ</Text>, 
-        render: (_, r) => (
-            <div>
-                <Text style={{ color: '#aaa', display: 'block' }}><MailOutlined style={{ fontSize: 10 }} /> {r.email}</Text>
-                <Text style={{ color: '#666', fontSize: 12 }}><PhoneOutlined style={{ fontSize: 10 }} /> {r.phone || "N/A"}</Text>
-            </div>
-        )
-    },
-    { 
-        title: <Text style={{ color: "#888" }}>PHÒNG BAN</Text>, 
-        dataIndex: "department",
-        render: (d) => <Text style={{ color: '#eee' }}>{d || "—"}</Text>
+    {
+      title: "THÔNG TIN LIÊN LẠC",
+      render: (_, r) => (
+        <div className="contact-cell">
+          <span className="email-txt">
+            <MailOutlined /> {r.email}
+          </span>
+          <span className="phone-txt">
+            <PhoneOutlined /> {r.phone || "---"}
+          </span>
+        </div>
+      ),
     },
     {
-      title: <Text style={{ color: "#888" }}>VAI TRÒ</Text>,
+      title: "PHÒNG BAN",
+      dataIndex: "department",
+      render: (d) => (
+        <span className="department-text">{d || "Chưa phân bổ"}</span>
+      ),
+    },
+    {
+      title: "VAI TRÒ",
       dataIndex: "role",
-      render: (r) => (r === "admin" ? <Tag color="red" style={{ border: 'none' }}>ADMIN</Tag> : <Tag color="blue" style={{ border: 'none' }}>STAFF</Tag>),
+      width: 130,
+      render: (r) =>
+        r === "admin" ? (
+          <Tag color="red" bordered={false} className="role-tag admin">
+            ADMIN
+          </Tag>
+        ) : (
+          <Tag color="blue" bordered={false} className="role-tag staff">
+            STAFF
+          </Tag>
+        ),
     },
     {
-      title: <Text style={{ color: "#888" }}>TRẠNG THÁI</Text>,
+      title: "TRẠNG THÁI",
+      width: 180,
       render: (_, e) => (
         <Select
           value={e.status}
-          variant="borderless"
+          bordered={false}
+          className="neo-select-status"
+          dropdownClassName="neo-select-dropdown"
           onChange={(v) => handleStatusChange(e, v)}
-          style={{ width: 140, background: '#1a1a1a', borderRadius: 4 }}
         >
-          <Select.Option value="active"><Text style={{ color: '#52c41a' }}>● Hoạt động</Text></Select.Option>
-          <Select.Option value="inactive"><Text style={{ color: '#555' }}>● Tạm ngưng</Text></Select.Option>
+          <Select.Option value="active">
+            <span className="status-dot active">●</span> HOẠT ĐỘNG
+          </Select.Option>
+          <Select.Option value="inactive">
+            <span className="status-dot inactive">●</span> TẠM NGƯNG
+          </Select.Option>
         </Select>
       ),
     },
     {
-      title: <Text style={{ color: "#888" }}>THAO TÁC</Text>,
-      align: 'center',
+      title: "BẢNG ĐIỀU KHIỂN",
+      align: "center",
+      width: 140,
       render: (_, e) => (
-        <Space>
-          <Button ghost icon={<EditOutlined />} style={{ color: '#ff6600', borderColor: '#333' }} onClick={() => handleEdit(e)} />
-          <Button danger ghost icon={<DeleteOutlined />} onClick={() => handleDelete(e)} />
+        <Space size="middle">
+          <Button
+            type="text"
+            className="btn-action-view"
+            icon={<EditOutlined />}
+            onClick={() => handleEdit(e)}
+          />
+          <Button
+            type="text"
+            danger
+            className="btn-action-delete"
+            icon={<DeleteOutlined />}
+            onClick={() => handleDelete(e)}
+          />
         </Space>
       ),
     },
@@ -192,133 +284,225 @@ console.log(employees);
     <ConfigProvider
       theme={{
         algorithm: theme.darkAlgorithm,
-        token: { colorBgContainer: "#141414", colorPrimary: "#ff6600", colorBorder: "#333" }
+        token: {
+          colorBgContainer: "#111111",
+          colorText: "#e5e5e5",
+          colorPrimary: "#ff5302",
+          colorBorder: "#222222",
+        },
       }}
     >
-      <div style={{ padding: 24, background: "#0a0a0a", minHeight: "100vh" }}>
-        
-        {/* HEADER SECTION */}
-        <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
-          <Col>
-            <Title level={2} style={{ color: "#fff", margin: 0 }}>
-              <TeamOutlined style={{ color: "#ff6600", marginRight: 12 }} />
-              Đội ngũ Nhân sự
-            </Title>
-            <Text style={{ color: "#555" }}>Quản lý tài khoản nội bộ và phân quyền hệ thống</Text>
-          </Col>
-          <Col>
-            <Space size="middle">
-              <Input
-                prefix={<SearchOutlined style={{ color: "#ff6600" }} />}
-                placeholder="Tìm nhân viên..."
-                style={{ width: 280, borderRadius: 20, background: '#141414', border: '1px solid #333' }}
-                onChange={(e) => {
+      <div className="admin-bento-layout">
+        {/* HEADER CONTROLS BAR */}
+        <div className="filter-bento-bar mb-4">
+          <Row gutter={[24, 16]} justify="space-between" align="middle">
+            <Col xs={24} md={12}>
+              <div className="page-headline-block">
+                <Title level={2} className="m-0 page-main-title">
+                  <TeamOutlined className="title-icon" /> Quản Lý Nhân Sự
+                </Title>
+                <Text className="text-muted letter-spacing-1">
+                  Hệ thống quản lý định danh tài khoản nội bộ, cấu hình phòng
+                  ban và phân quyền lớp bảo mật
+                </Text>
+              </div>
+            </Col>
+            <Col xs={24} md={12} className="text-end">
+              <Space size="middle" className="mobile-full-width-space">
+                <Input
+                  prefix={<SearchOutlined />}
+                  placeholder="Tra cứu tên, email nhân sự..."
+                  className="neo-search-input"
+                  value={keyword}
+                  onChange={(e) => {
                     setKeyword(e.target.value);
                     setCurrentPage(1);
-                }}
-                allowClear
-              />
-              <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd} style={{ height: 40, borderRadius: 8 }}>
-                THÊM NHÂN VIÊN
-              </Button>
-            </Space>
-          </Col>
-        </Row>
-
-        {/* TABLE CARD */}
-        <div style={{ background: '#141414', border: '1px solid #222', borderRadius: 12, overflow: 'hidden' }}>
-            <Table
-                columns={columns}
-                dataSource={employees}
-                rowKey="id"
-                loading={loading}
-                pagination={false}
-            />
-            
-            <div style={{ padding: '16px', display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid #222' }}>
-                <Pagination
-                    current={currentPage}
-                    total={totalPages * limit}
-                    pageSize={limit}
-                    onChange={(p) => setCurrentPage(p)}
-                    showSizeChanger={false}
+                  }}
+                  allowClear
                 />
-            </div>
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={handleAdd}
+                  className="btn-neo-primary"
+                >
+                  THÊM NHÂN VIÊN
+                </Button>
+              </Space>
+            </Col>
+          </Row>
         </div>
 
-        {/* MODAL FORM */}
-        <Modal
-            open={showModal}
-            onCancel={() => setShowModal(false)}
-            onOk={handleSave}
-            width={850}
-            centered
-            okText={isNew ? "TẠO TÀI KHOẢN" : "CẬP NHẬT"}
-            cancelText="HỦY"
-            title={<Text style={{ color: '#fff', fontSize: 18 }}>{isNew ? "➕ ĐĂNG KÝ NHÂN VIÊN MỚI" : "✏️ CẬP NHẬT THÔNG TIN"}</Text>}
+        {/* DATA CONTAINER */}
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="table-bento-container"
         >
-          <Form layout="vertical" form={form} style={{ marginTop: 24 }}>
+          <Table
+            columns={columns}
+            dataSource={employees}
+            rowKey="id"
+            loading={loading}
+            className="custom-neo-table"
+            pagination={false}
+          />
+
+          {/* CUSTOM NEO PAGINATION COMPONENT */}
+          <div className="neo-pagination-wrapper">
+            <Pagination
+              current={currentPage}
+              total={totalPages * limit}
+              pageSize={limit}
+              onChange={(p) => setCurrentPage(p)}
+              showSizeChanger={false}
+            />
+          </div>
+        </motion.div>
+
+        {/* MODERN MULTI-COLUMN FORM MODAL */}
+        <Modal
+          open={showModal}
+          onCancel={() => setShowModal(false)}
+          onOk={handleSave}
+          width={900}
+          centered
+          className="neo-form-modal"
+          okText={isNew ? "KHỞI TẠO TÀI KHOẢN" : "CẬP NHẬT HỒ SƠ"}
+          cancelText="HỦY LỆNH"
+          title={
+            <div className="form-modal-header-title">
+              {isNew
+                ? "Đăng ký thành viên nội bộ mới"
+                : "Cấu hình lại thông tin hồ sơ"}
+            </div>
+          }
+        >
+          <Form layout="vertical" form={form} className="neo-form-container">
             <Row gutter={24}>
-              <Col span={12}>
-                <Form.Item name="full_name" label="Họ và tên" rules={[{ required: true }]}>
-                  <Input placeholder="Nguyễn Văn A" />
+              {/* CỘT TRÁI: ĐỊNH DANH TÀI KHOẢN */}
+              <Col span={12} className="form-split-col border-right">
+                <div className="form-sub-section-title">
+                  <SolutionOutlined /> DANH TÍNH CƠ BẢN
+                </div>
+                <Form.Item
+                  name="full_name"
+                  label="Họ và tên nhân sự"
+                  rules={[{ required: true, message: "Nhập họ tên" }]}
+                >
+                  <Input
+                    placeholder="Ví dụ: Nguyễn Văn A"
+                    className="neo-form-input"
+                  />
                 </Form.Item>
 
-                <Form.Item name="email" label="Email Công vụ" rules={[{ required: true, type: 'email' }]}>
-                  <Input placeholder="email@company.com" disabled={!isNew} />
+                <Form.Item
+                  name="email"
+                  label="Hòm thư công vụ (Email)"
+                  rules={[
+                    {
+                      required: true,
+                      type: "email",
+                      message: "Nhập đúng cấu trúc email",
+                    },
+                  ]}
+                >
+                  <Input
+                    placeholder="name@company.com"
+                    disabled={!isNew}
+                    className="neo-form-input"
+                  />
                 </Form.Item>
 
                 {isNew && (
-                  <Form.Item name="password" label="Mật khẩu truy cập" rules={[{ required: true }]}>
-                    <Input.Password placeholder="••••••••" />
+                  <Form.Item
+                    name="password"
+                    label="Mật khẩu khởi tạo truy cập"
+                    rules={[{ required: true, message: "Thiết lập mật khẩu" }]}
+                  >
+                    <Input.Password
+                      placeholder="••••••••"
+                      className="neo-form-input password-input"
+                    />
                   </Form.Item>
                 )}
 
-                <Row gutter={12}>
-                    <Col span={12}>
-                        <Form.Item name="phone" label="Điện thoại">
-                            <Input placeholder="090..." />
-                        </Form.Item>
-                    </Col>
-                    <Col span={12}>
-                        <Form.Item name="role" label="Vai trò" initialValue="staff">
-                            <Select dropdownStyle={{ background: '#1a1a1a' }}>
-                                <Select.Option value="admin">Quản trị viên (Admin)</Select.Option>
-                                <Select.Option value="staff">Nhân viên (Staff)</Select.Option>
-                            </Select>
-                        </Form.Item>
-                    </Col>
+                <Row gutter={16}>
+                  <Col span={12}>
+                    <Form.Item name="phone" label="Hotline di động">
+                      <Input
+                        placeholder="090XXXXXXXX"
+                        className="neo-form-input"
+                      />
+                    </Form.Item>
+                  </Col>
+                  <Col span={12}>
+                    <Form.Item
+                      name="role"
+                      label="Phân cấp hệ thống"
+                      initialValue="staff"
+                    >
+                      <Select
+                        popupClassName="neo-select-dropdown"
+                        className="neo-form-select"
+                      >
+                        <Select.Option value="admin">
+                          Quản trị viên (Admin)
+                        </Select.Option>
+                        <Select.Option value="staff">
+                          Nhân viên (Staff)
+                        </Select.Option>
+                      </Select>
+                    </Form.Item>
+                  </Col>
                 </Row>
               </Col>
 
-              <Col span={12}>
-                <Row gutter={12}>
-                    <Col span={12}>
-                        <Form.Item name="department" label="Phòng ban">
-                            <Input placeholder="VD: Sales, Marketing..." />
-                        </Form.Item>
-                    </Col>
-                    <Col span={12}>
-                        <Form.Item name="position" label="Chức danh">
-                            <Input placeholder="VD: Manager, Lead..." />
-                        </Form.Item>
-                    </Col>
+              {/* CỘT PHẢI: VỊ TRÍ CÔNG TÁC & AVATAR */}
+              <Col span={12} className="form-split-col">
+                <div className="form-sub-section-title">
+                  <DeploymentUnitOutlined /> SƠ ĐỒ TỔ CHỨC
+                </div>
+                <Row gutter={16}>
+                  <Col span={12}>
+                    <Form.Item name="department" label="Phòng ban điều hành">
+                      <Input
+                        placeholder="VD: Sales, R&D..."
+                        className="neo-form-input"
+                      />
+                    </Form.Item>
+                  </Col>
+                  <Col span={12}>
+                    <Form.Item name="position" label="Chức danh đảm nhiệm">
+                      <Input
+                        placeholder="VD: Manager, Specialist..."
+                        className="neo-form-input"
+                      />
+                    </Form.Item>
+                  </Col>
                 </Row>
 
-                <Form.Item name="address" label="Địa chỉ cư trú">
-                  <Input.TextArea rows={2} placeholder="Số nhà, tên đường..." />
+                <Form.Item name="address" label="Địa chỉ cư trú tạm trú">
+                  <Input.TextArea
+                    rows={2}
+                    placeholder="Khu vực thành phố, số nhà..."
+                    className="neo-form-textarea"
+                  />
                 </Form.Item>
 
-                <Form.Item name="avatar" label="Ảnh đại diện">
-                  <Upload 
-                    beforeUpload={() => false} 
-                    maxCount={1} 
+                <Form.Item
+                  name="avatar"
+                  label="Hồ sơ ảnh đại diện (Định dạng vuông)"
+                >
+                  <Upload
+                    beforeUpload={() => false}
+                    maxCount={1}
                     listType="picture-card"
-                    className="avatar-uploader"
+                    className="avatar-neo-uploader"
                   >
                     <div>
-                        <PlusOutlined style={{ color: '#ff6600' }} />
-                        <div style={{ marginTop: 8, color: '#888' }}>Tải ảnh</div>
+                      <PlusOutlined className="upload-plus-icon" />
+                      <div className="upload-txt">UP DATA</div>
                     </div>
                   </Upload>
                 </Form.Item>
@@ -328,13 +512,107 @@ console.log(employees);
         </Modal>
 
         <style>{`
-            .ant-table-cell { border-bottom: 1px solid #1a1a1a !important; }
-            .ant-pagination-item-active { border-color: #ff6600 !important; }
-            .ant-pagination-item-active a { color: #ff6600 !important; }
-            .ant-modal-content { border: 1px solid #333 !important; }
-            .ant-form-item-label label { color: #888 !important; }
-            .avatar-uploader .ant-upload { background: #0a0a0a !important; border: 1px dashed #333 !important; }
-            .ant-input:focus, .ant-input-focused { border-color: #ff6600 !important; box-shadow: none !important; }
+          .admin-bento-layout { padding: 30px; background: #080808; min-height: 100vh; color: #e5e5e5; font-family: 'Inter', sans-serif; }
+          .page-main-title { font-weight: 900 !important; letter-spacing: -1px; color: #fff !important; display: flex; align-items: center; }
+          .title-icon { color: #ff5302; margin-right: 12px; }
+          .letter-spacing-1 { letter-spacing: 0.5px; font-size: 11px; font-weight: 700; color: #ffff !important; display: block; margin-top: 4px; }
+
+          /* Filter Bar */
+          .filter-bento-bar { background: #111; border: 1px solid #222; border-radius: 16px; padding: 20px; }
+          .neo-search-input { background: #161616 !important; border: 1px solid #262626 !important; border-radius: 10px !important; padding: 10px 14px !important; color: #fff !important; width: 280px; }
+          .neo-search-input .anticon { color: #ff5302 !important; }
+          .btn-neo-primary { background: #ff5302 !important; border: none !important; font-weight: 800 !important; border-radius: 10px !important; height: 44px !important; padding: 0 20px !important; letter-spacing: 0.5px; }
+          .btn-neo-primary:hover { background: #ff661d !important; }
+
+          /* Table Bento Container */
+          .table-bento-container { background: #111; border: 1px solid #222; border-radius: 20px; overflow: hidden; }
+          .custom-neo-table .ant-table { background: transparent !important; }
+          .custom-neo-table .ant-table-thead > tr > th { font-size: 11px !important; font-weight: 800 !important; letter-spacing: 0.5px; border-bottom: 1px solid #222 !important; padding: 18px 20px !important; color: #fff !important; background: #161616 !important; }
+          .custom-neo-table .ant-table-tbody > tr > td { border-bottom: 1px solid #1a1a1a !important; padding: 16px 20px !important; }
+
+          /* Forcing Core Cell Contents to Pure White (#ffffff) */
+          .c-name-main { font-weight: 700; color: #ffffff !important; font-size: 14px; display: block; }
+          .c-id-sub { font-size: 11px; color: #ff5302; font-weight: 700; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+          
+          .contact-cell .email-txt { display: block; color: #ffffff !important; font-weight: 600; font-size: 13px; }
+          .contact-cell .phone-txt { display: block; color: #888; font-size: 11px; margin-top: 2px; font-weight: 700; }
+          .contact-cell .anticon { margin-right: 4px; color: #ffff; }
+
+          .department-text { color: #ffffff !important; font-weight: 600; font-size: 13px; }
+
+          /* Role and Status Select Design */
+          .role-tag { font-weight: 800; font-size: 10px; padding: 3px 10px; border-radius: 5px; margin: 0; }
+          .role-tag.admin { background: rgba(239, 68, 68, 0.1); color: #efffff4; }
+          .role-tag.staff { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+
+          .neo-select-status { background: #161616; border: 1px solid #262626; border-radius: 8px; width: 145px; }
+          .neo-select-status .ant-select-selection-item { font-weight: 800 !important; font-size: 11px !important; color: #ffffff !important; }
+          .status-dot { margin-right: 6px; }
+          .status-dot.active { color: #22c55e; }
+          .status-dot.inactive { color: #fff; }
+
+          .btn-action-view { background: #161616 !important; color: #ff5302 !important; border-radius: 8px; }
+          .btn-action-view:hover { background: rgba(255, 83, 2, 0.1) !important; }
+          .btn-action-delete { background: #161616 !important; color: #efffff4 !important; border-radius: 8px; }
+          .btn-action-delete:hover { background: rgba(239, 68, 68, 0.1) !important; }
+
+          /* Pagination custom footer */
+          .neo-pagination-wrapper { padding: 18px 20px; display: flex; justify-content: flex-end; border-top: 1px solid #161616; background: #131313; }
+          .ant-pagination-item { background: #161616 !important; border-color: #262626 !important; border-radius: 8px; }
+          .ant-pagination-item a { color: #fff !important; font-weight: 700; }
+          .ant-pagination-item-active { border-color: #ff5302 !important; }
+          .ant-pagination-item-active a { color: #ff5302 !important; }
+          .ant-pagination-prev .ant-pagination-item-link, .ant-pagination-next .ant-pagination-item-link { background: #161616 !important; border-color: #262626 !important; border-radius: 8px; color: #fff !important; }
+
+          /* Multi-column Form Modal Styling */
+          .neo-form-modal .ant-modal-content { background: #0e0e0e !important; border: 1px solid #222 !important; border-radius: 24px !important; padding: 30px !important; }
+          .form-modal-header-title { color: #ffffff !important; font-size: 18px; font-weight: 900; letter-spacing: -0.5px; text-transform: uppercase; border-bottom: 1px solid #1a1a1a; padding-bottom: 15px; }
+          .neo-form-container { margin-top: 25px; }
+          .form-split-col.border-right { border-right: 1px solid #1a1a1a; padding-right: 24px; }
+          .form-sub-section-title { font-size: 10px; font-weight: 900; color: #ffff; letter-spacing: 1px; margin-bottom: 20px; display: flex; align-items: center; gap: 6px; }
+          
+          /* Form Inputs layout */
+          .ant-form-item { margin-bottom: 16px !important; }
+          .ant-form-item-label label { color: #fff !important; font-size: 11px !important; font-weight: 700 !important; text-transform: uppercase; }
+          .neo-form-input, .neo-form-select .ant-select-selector, .neo-form-textarea { background: #141414 !important; border: 1px solid #222 !important; border-radius: 10px !important; color: #ffffff !important; width: 100% !important; padding: 8px 12px !important; }
+          .neo-form-select .ant-select-selector { padding: 4px 12px !important; height: 42px !important; }
+          .neo-form-textarea { padding: 12px !important; }
+          
+          /* Input / Select Text control overrides */
+          .ant-input-input, .ant-select-selection-item, .ant-input-password input { color: #ffffff !important; font-weight: 600; }
+          .ant-input::placeholder { color: #ffff !important; }
+          
+          /* Password specific background fix */
+          .password-input { padding: 0 !important; overflow: hidden; background: #141414 !important; display: flex; align-items: center; }
+          .password-input input { background: transparent !important; padding: 8px 12px !important; height: 100%; border: none !important; }
+          .password-input .ant-input-suffix { padding-right: 12px; }
+
+          /* Custom Avatar Uploader Box */
+          .avatar-neo-uploader .ant-upload-list-item-container, .avatar-neo-uploader .ant-upload-select { width: 100px !important; height: 100px !important; border-radius: 12px !important; margin: 0 !important; }
+          .avatar-neo-uploader .ant-upload-select { background: #141414 !important; border: 1px dashed #222 !important; }
+          .avatar-neo-uploader .ant-upload-select:hover { border-color: #ff5302 !important; }
+          .upload-plus-icon { color: #ff5302; font-size: 18px; }
+          .upload-txt { margin-top: 4px; font-weight: 900; color: #ffff; font-size: 9px; letter-spacing: 0.5px; }
+
+          /* Select Popups override */
+          .neo-select-dropdown { background: #141414 !important; border: 1px solid #222 !important; border-radius: 10px !important; padding: 6px !important; }
+          .neo-select-dropdown .ant-select-item { color: #aaa !important; font-weight: 600; border-radius: 6px; }
+          .neo-select-dropdown .ant-select-item-option-selected { background: #222 !important; color: #fff !important; }
+
+          /* Action modals system overrides */
+          .modal-danger-title { color: #efffff4; font-weight: 900; }
+          .btn-modal-danger-ok { background: #efffff4 !important; font-weight: 700; border-radius: 8px; border: none !important; color: white !important; }
+          .btn-modal-danger-cancel { background: #161616 !important; border-color: #262626 !important; color: #fff !important; font-weight: 700; border-radius: 8px; }
+          .ant-modal-confirm-body .ant-modal-confirm-content { margin-top: 8px !important; }
+
+          /* Focus Box outlines */
+          .ant-input:focus, .ant-input-focused, .ant-select:focus, .ant-select-focused, .ant-input-password-focused { border-color: #ff5302 !important; box-shadow: none !important; }
+          
+          @media (max-width: 768px) {
+            .neo-search-input { width: 100%; }
+            .mobile-full-width-space { width: 100%; justify-content: space-between; }
+            .form-split-col.border-right { border-right: none; padding-right: 0; margin-bottom: 20px; }
+          }
         `}</style>
       </div>
     </ConfigProvider>

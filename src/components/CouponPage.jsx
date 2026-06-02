@@ -1,13 +1,36 @@
 import React, { useEffect, useState } from "react";
 import {
-  Table, Button, Modal, Form, Input, Select, Tag, Space, Badge,
-  DatePicker, InputNumber, message, Card, Row, Col, Typography, ConfigProvider, theme
+  Table,
+  Button,
+  Modal,
+  Form,
+  Input,
+  Select,
+  Tag,
+  Space,
+  DatePicker,
+  InputNumber,
+  Typography,
+  ConfigProvider,
+  Row,
+  Col,
+  theme,
 } from "antd";
 import {
-  PlusOutlined, EditOutlined, DeleteOutlined,
-  SearchOutlined, PercentageOutlined, CalendarOutlined
+  PlusOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  SearchOutlined,
+  PercentageOutlined,
+  CalendarOutlined,
+  InboxOutlined,
+  DollarOutlined,
+  InfoCircleOutlined,
+  FireOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
+import { motion } from "framer-motion";
+import toast from "react-hot-toast";
 import {
   getCoupons,
   createCoupon,
@@ -37,7 +60,7 @@ const CouponPage = () => {
       setLoading(true);
       const res = await getCoupons(p, 10, query);
       const now = dayjs();
-      
+
       const updated = (res.data || []).map((c) => {
         const isExpired = dayjs(c.end_date).isBefore(now);
         if (c.quantity <= 0 || isExpired) return { ...c, status: "inactive" };
@@ -48,7 +71,7 @@ const CouponPage = () => {
       setPage(res.currentPage || 1);
       setTotalPages(res.totalPages || 1);
     } catch {
-      message.error("Không thể kết nối danh sách coupon");
+      toast.error("Không thể kết nối danh sách coupon");
     } finally {
       setLoading(false);
     }
@@ -84,80 +107,106 @@ const CouponPage = () => {
 
       if (editingCoupon) {
         await updateCoupon(editingCoupon.id, payload);
-        message.success("Cập nhật mã giảm giá thành công");
+        toast.success("Cập nhật mã giảm giá thành công");
       } else {
         await createCoupon(payload);
-        message.success("Đã phát hành mã giảm giá mới");
+        toast.success("Đã phát hành mã giảm giá mới");
       }
 
       setOpenModal(false);
       fetchCoupons(page, search);
     } catch (err) {
       console.error(err);
-      message.error("Vui lòng kiểm tra lại thông tin biểu mẫu");
+      toast.error("Vui lòng kiểm tra lại thông tin biểu mẫu");
     }
   };
 
   const confirmDelete = async () => {
     try {
       await deleteCoupon(couponToDelete.id);
-      message.success("Đã hủy bỏ mã giảm giá");
+      toast.success("Đã hủy bỏ mã giảm giá");
       setOpenDelete(false);
       fetchCoupons(page, search);
     } catch {
-      message.error("Lỗi khi xóa mã");
+      toast.error("Lỗi khi xóa mã");
     }
   };
 
   /* ================= TABLE COLUMNS ================= */
   const columns = [
     {
-      title: <Text style={{ color: "#888" }}>MÃ VOUCHER</Text>,
+      title: "MÃ VOUCHER",
       dataIndex: "code",
       render: (t) => (
-        <Tag color="#1a1a1a" style={{ border: '1px dashed #ff6600', padding: '2px 10px' }}>
-          <Text style={{ color: "#ff6600", fontWeight: "bold", letterSpacing: 1 }}>{t?.toUpperCase()}</Text>
-        </Tag>
+        <span className="coupon-code-badge">{t?.toUpperCase()}</span>
       ),
     },
     {
-      title: <Text style={{ color: "#888" }}>GIÁ TRỊ</Text>,
+      title: "MỨC ƯU ĐÃI",
       render: (r) => (
-        <Text style={{ color: "#fff", fontWeight: 600 }}>
-          {r.type === "percent" ? `${r.value}%` : `${Number(r.value).toLocaleString()}₫`}
-        </Text>
+        <span className="benefit-cell">
+          {r.type === "percent"
+            ? `${r.value}%`
+            : `${Number(r.value).toLocaleString()}đ`}
+        </span>
       ),
     },
     {
-      title: <Text style={{ color: "#888" }}>TỒN KHO</Text>,
+      title: "LƯỢT KHẢ DỤNG",
       dataIndex: "quantity",
-      render: (q) => <Text style={{ color: q < 10 ? "#ff4d4f" : "#fff" }}>{q} lượt</Text>,
+      render: (q) => (
+        <span className={`stock-cell ${q < 10 ? "critical" : ""}`}>
+          <InboxOutlined /> {q} lượt
+        </span>
+      ),
     },
     {
-      title: <Text style={{ color: "#888" }}>HẠN DÙNG</Text>,
+      title: "CHU KỲ HIỆU LỰC",
       render: (r) => (
-        <div style={{ fontSize: 12 }}>
-          <Text style={{ color: "#666", display: 'block' }}>Từ: {dayjs(r.start_date).format("DD/MM/YYYY")}</Text>
-          <Text style={{ color: "#aaa" }}>Đến: {dayjs(r.end_date).format("DD/MM/YYYY")}</Text>
+        <div className="duration-cell">
+          <span>
+            <CalendarOutlined /> {dayjs(r.start_date).format("DD/MM/YYYY")}
+          </span>
+          <span className="arrow-split">→</span>
+          <span className="end-txt">
+            {dayjs(r.end_date).format("DD/MM/YYYY")}
+          </span>
         </div>
       ),
     },
     {
-      title: <Text style={{ color: "#888" }}>TRẠNG THÁI</Text>,
+      title: "TRẠNG THÁI",
       dataIndex: "status",
       render: (s) => (
-        <Badge status={s === "active" ? "success" : "default"} 
-          text={<Text style={{ color: s === "active" ? "#52c41a" : "#555" }}>{s === "active" ? "ĐANG CHẠY" : "DỪNG"}</Text>} 
-        />
+        <span
+          className={`status-pill ${s === "active" ? "active" : "inactive"}`}
+        >
+          ● {s === "active" ? "ĐANG CHẠY" : "HẾT HẠN / DỪNG"}
+        </span>
       ),
     },
     {
-      title: <Text style={{ color: "#888" }}>THAO TÁC</Text>,
+      title: "BẢNG ĐIỀU KHIỂN",
       align: "center",
+      width: 140,
       render: (_, r) => (
-        <Space>
-          <Button ghost icon={<EditOutlined />} style={{ color: '#ff6600', borderColor: '#333' }} onClick={() => openForm(r)} />
-          <Button danger ghost icon={<DeleteOutlined />} onClick={() => { setCouponToDelete(r); setOpenDelete(true); }} />
+        <Space size="middle">
+          <Button
+            type="text"
+            className="btn-action-view"
+            icon={<EditOutlined />}
+            onClick={() => openForm(r)}
+          />
+          <Button
+            type="text"
+            danger
+            className="btn-action-delete"
+            icon={<DeleteOutlined />}
+            onClick={() => {
+              setCouponToDelete(r);
+              setOpenDelete(true);
+            }}
+          />
         </Space>
       ),
     },
@@ -167,149 +216,358 @@ const CouponPage = () => {
     <ConfigProvider
       theme={{
         algorithm: theme.darkAlgorithm,
-        token: { colorBgContainer: "#141414", colorPrimary: "#ff6600", colorBorder: "#333" }
+        token: {
+          colorBgContainer: "#111111",
+          colorText: "#e5e5e5",
+          colorPrimary: "#ff5302",
+          colorBorder: "#222222",
+        },
       }}
     >
-      <div style={{ padding: 24, background: "#0a0a0a", minHeight: "100vh" }}>
-        
-        {/* HEADER */}
-        <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
-          <Col>
-            <Title level={2} style={{ color: "#fff", margin: 0 }}>
-              <PercentageOutlined style={{ color: "#ff6600", marginRight: 12 }} />
-              Chiến dịch Giảm giá
-            </Title>
-            <Text style={{ color: "#555" }}>Tạo và quản lý các mã ưu đãi cho khách hàng</Text>
-          </Col>
-          <Col>
-            <Space size="middle">
-              <Input
-                prefix={<SearchOutlined style={{ color: "#ff6600" }} />}
-                placeholder="Tìm mã SALE..."
-                className="dark-input"
-                onChange={(e) => setSearch(e.target.value)}
-              />
-              <Button type="primary" icon={<PlusOutlined />} onClick={() => openForm()} style={{ borderRadius: 8, height: 40 }}>
-                TẠO MÃ MỚI
-              </Button>
-            </Space>
-          </Col>
-        </Row>
+      <div className="admin-bento-layout">
+        {/* HEADER & CONTROLS BAR */}
+        <div className="filter-bento-bar mb-4">
+          <Row gutter={[24, 16]} justify="space-between" align="middle">
+            <Col xs={24} md={12}>
+              <div className="page-headline-block">
+                <Title level={2} className="m-0 page-main-title">
+                  <PercentageOutlined className="title-icon" /> Quản Lý Mã Giảm
+                  Giá
+                </Title>
+                <Text className="text-muted letter-spacing-1">
+                  Phát hành cấu trúc khuyến mãi, cấu hình phân tích giới hạn
+                  chiết khấu đơn hàng
+                </Text>
+              </div>
+            </Col>
+            <Col xs={24} md={12} className="text-end">
+              <Space size="middle" className="mobile-full-width-space">
+                <Input
+                  prefix={<SearchOutlined />}
+                  placeholder="Tra cứu token mã chiến dịch..."
+                  className="neo-search-input"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  allowClear
+                />
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={() => openForm()}
+                  className="btn-neo-primary"
+                >
+                  TẠO MÃ MỚI
+                </Button>
+              </Space>
+            </Col>
+          </Row>
+        </div>
 
-        {/* TABLE */}
-        <div style={{ border: "1px solid #222", borderRadius: 12, overflow: "hidden" }}>
+        {/* DATA CONTAINER */}
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="table-bento-container"
+        >
           <Table
             columns={columns}
             dataSource={coupons}
             rowKey="id"
             loading={loading}
+            className="custom-neo-table"
             pagination={{
               current: page,
               total: totalPages * 10,
               onChange: (p) => setPage(p),
+              showSizeChanger: false,
             }}
           />
-        </div>
+        </motion.div>
 
-        {/* DELETE MODAL */}
+        {/* DANGER DELETION MODAL */}
         <Modal
           open={openDelete}
           onCancel={() => setOpenDelete(false)}
           onOk={confirmDelete}
-          title={<span style={{ color: "#fff" }}>⚠️ XÁC NHẬN XÓA</span>}
-          okText="XÓA MÃ"
-          okButtonProps={{ danger: true }}
+          title={
+            <span className="modal-danger-title">⚠️ ĐÌNH CHỈ CHIẾN DỊCH</span>
+          }
+          okText="HỦY BỎ VĨNH VIỄN"
+          cancelText="QUAY LẠI"
+          centered
+          okButtonProps={{ danger: true, className: "btn-modal-danger-ok" }}
+          cancelButtonProps={{ className: "btn-modal-danger-cancel" }}
         >
-          <Text style={{ color: "#ccc" }}>
-            Hành động này sẽ gỡ bỏ mã <b style={{ color: '#ff6600' }}>{couponToDelete?.code}</b> khỏi hệ thống. Khách hàng sẽ không thể áp dụng mã này nữa.
-          </Text>
+          <div className="py-2">
+            <Text style={{ color: "#fff" }}>
+              Hệ thống sẽ thực hiện vô hiệu hóa token ưu đãi{" "}
+              <strong style={{ color: "#ff5302" }}>
+                {couponToDelete?.code}
+              </strong>
+              . Mọi giỏ hàng hiện tại đang áp dụng mã sẽ bị hủy tính năng giảm
+              giá. Bạn chắc chắn?
+            </Text>
+          </div>
         </Modal>
 
-        {/* ADD / EDIT MODAL */}
+        {/* MODERN FORM MODAL */}
         <Modal
           open={openModal}
           onCancel={() => setOpenModal(false)}
           onOk={handleSave}
-          width={800}
-          title={<span style={{ color: "#fff" }}>{editingCoupon ? "CHỈNH SỬA CHIẾN DỊCH" : "PHÁT HÀNH MÃ MỚI"}</span>}
-          okText="LƯU THAY ĐỔI"
+          width={850}
+          centered
+          className="neo-form-modal"
+          title={
+            <div className="form-modal-header-title">
+              {editingCoupon
+                ? "Chỉnh sửa cấu hình voucher"
+                : "Phát hành mã ưu đãi hệ thống"}
+            </div>
+          }
+          okText={editingCoupon ? "LƯU CẬP NHẬT" : "KHỞI CHẠY CHIẾN DỊCH"}
+          cancelText="HỦY LỆNH"
         >
-          <Form layout="vertical" form={form} style={{ marginTop: 20 }}>
+          <Form layout="vertical" form={form} className="neo-form-container">
+            <div className="form-sub-section-title">
+              <FireOutlined /> THÔNG TIN CỐT LÕI
+            </div>
             <Row gutter={16}>
               <Col span={12}>
-                <Form.Item name="code" label="Mã Voucher (viết liền, không dấu)" rules={[{ required: true }]}>
-                  <Input placeholder="Ví dụ: AUDIOPHILE2024" />
+                <Form.Item
+                  name="code"
+                  label="Mã Token Voucher (Viết liền, in hoa)"
+                  rules={[
+                    { required: true, message: "Vui lòng điền mã token" },
+                  ]}
+                >
+                  <Input
+                    placeholder="Ví dụ: QUY2_CHILL_2026"
+                    className="neo-form-input"
+                  />
                 </Form.Item>
               </Col>
               <Col span={12}>
-                <Form.Item name="type" label="Loại hình giảm giá" initialValue="percent">
-                  <Select dropdownStyle={{ background: '#1a1a1a' }}>
-                    <Select.Option value="percent">Phần trăm (%)</Select.Option>
-                    <Select.Option value="fixed">Số tiền cố định (₫)</Select.Option>
+                <Form.Item
+                  name="type"
+                  label="Cơ chế chiết khấu"
+                  initialValue="percent"
+                >
+                  <Select
+                    popupClassName="neo-select-dropdown"
+                    className="neo-form-select"
+                  >
+                    <Select.Option value="percent">
+                      Tỉ lệ phần trăm (%)
+                    </Select.Option>
+                    <Select.Option value="fixed">
+                      Khấu trừ tiền mặt trực tiếp (đ)
+                    </Select.Option>
                   </Select>
                 </Form.Item>
               </Col>
             </Row>
 
+            <div className="form-sub-section-title">
+              <DollarOutlined /> ĐỊNH LƯỢNG GIÁ TRỊ TÀI CHÍNH
+            </div>
             <Row gutter={16}>
               <Col span={8}>
-                <Form.Item name="value" label="Giá trị giảm">
-                  <InputNumber min={1} style={{ width: "100%" }} />
+                <Form.Item
+                  name="value"
+                  label="Biên độ giảm"
+                  rules={[{ required: true, message: "Nhập giá trị" }]}
+                >
+                  <InputNumber
+                    min={1}
+                    className="neo-form-input-number"
+                    placeholder="Mức giảm..."
+                  />
                 </Form.Item>
               </Col>
               <Col span={8}>
-                <Form.Item name="quantity" label="Số lượng phát hành">
-                  <InputNumber min={1} style={{ width: "100%" }} />
+                <Form.Item
+                  name="quantity"
+                  label="Tổng số lượng cấp phát"
+                  rules={[{ required: true, message: "Nhập số lượng" }]}
+                >
+                  <InputNumber
+                    min={1}
+                    className="neo-form-input-number"
+                    placeholder="Lượt dùng..."
+                  />
                 </Form.Item>
               </Col>
               <Col span={8}>
-                <Form.Item name="min_order_value" label="Đơn hàng tối thiểu (₫)">
-                  <InputNumber min={0} style={{ width: "100%" }} />
+                <Form.Item
+                  name="min_order_value"
+                  label="Sàn đơn hàng tối thiểu"
+                >
+                  <InputNumber
+                    min={0}
+                    className="neo-form-input-number"
+                    placeholder="Giá trị kích hoạt (đ)..."
+                  />
                 </Form.Item>
               </Col>
             </Row>
 
-            <Form.Item name="dateRange" label="Thời hạn hiệu lực" rules={[{ required: true }]}>
-              <RangePicker 
-                style={{ width: "100%" }} 
-                showTime 
-                placeholder={['Ngày bắt đầu', 'Ngày kết thúc']} 
+            <div className="form-sub-section-title">
+              <CalendarOutlined /> THỜI HẠN & PHẠM VI HỆ THỐNG
+            </div>
+            <Form.Item
+              name="dateRange"
+              label="Thời gian chiến dịch hoạt động"
+              rules={[{ required: true, message: "Vui lòng chọn thời hạn" }]}
+            >
+              <RangePicker
+                style={{ width: "100%" }}
+                showTime
+                placeholder={[
+                  "Thời điểm bắt đầu kích hoạt",
+                  "Thời điểm tự động đóng mã",
+                ]}
+                className="neo-form-range-picker"
               />
             </Form.Item>
 
             <Row gutter={16}>
               <Col span={12}>
-                <Form.Item name="apply_to" label="Phạm vi áp dụng" initialValue="order">
-                  <Select>
-                    <Select.Option value="order">Toàn bộ hóa đơn</Select.Option>
-                    <Select.Option value="product">Chỉ sản phẩm chỉ định</Select.Option>
+                <Form.Item
+                  name="apply_to"
+                  label="Phạm vi áp dụng mục tiêu"
+                  initialValue="order"
+                >
+                  <Select
+                    popupClassName="neo-select-dropdown"
+                    className="neo-form-select"
+                  >
+                    <Select.Option value="order">
+                      Toàn bộ giỏ hàng hóa đơn
+                    </Select.Option>
+                    <Select.Option value="product">
+                      Giới hạn nhóm sản phẩm chỉ định
+                    </Select.Option>
                   </Select>
                 </Form.Item>
               </Col>
               <Col span={12}>
-                <Form.Item name="status" label="Trạng thái triển khai" initialValue="active">
-                  <Select>
-                    <Select.Option value="active">Kích hoạt ngay</Select.Option>
-                    <Select.Option value="inactive">Tạm ngưng</Select.Option>
+                <Form.Item
+                  name="status"
+                  label="Trạng thái phân phối"
+                  initialValue="active"
+                >
+                  <Select
+                    popupClassName="neo-select-dropdown"
+                    className="neo-form-select"
+                  >
+                    <Select.Option value="active">
+                      Kích hoạt phân phối ngay
+                    </Select.Option>
+                    <Select.Option value="inactive">
+                      Tạm giữ cấu hình trong kho
+                    </Select.Option>
                   </Select>
                 </Form.Item>
               </Col>
             </Row>
 
-            <Form.Item name="description" label="Mô tả chiến dịch">
-              <Input.TextArea rows={3} placeholder="Mô tả điều kiện áp dụng cho khách hàng..." />
+            <div className="form-sub-section-title">
+              <InfoCircleOutlined /> DIỄN GIẢI CHÍNH SÁCH
+            </div>
+            <Form.Item
+              name="description"
+              label="Ghi chú điều kiện / Nội dung hiển thị khách hàng"
+            >
+              <Input.TextArea
+                rows={3}
+                placeholder="Ví dụ: Chỉ áp dụng cho các dòng thiết bị âm thanh Audiophile cao cấp, không tính hàng cũ..."
+                className="neo-form-textarea"
+              />
             </Form.Item>
           </Form>
         </Modal>
 
         <style>{`
-          .dark-input { background: #141414 !important; border: 1px solid #333 !important; color: #fff !important; border-radius: 20px !important; width: 280px; }
-          .dark-input input { color: #fff !important; }
-          .ant-input-number, .ant-picker { background: #141414 !important; border: 1px solid #333 !important; }
-          .ant-input-number-input, .ant-picker-input > input { color: #fff !important; }
-          .ant-table-cell { border-bottom: 1px solid #1a1a1a !important; }
-          .ant-modal-header { border-bottom: 1px solid #222 !important; margin-bottom: 0 !important; }
-          .ant-form-item-label label { color: #888 !important; }
+          .admin-bento-layout { padding: 30px; background: #080808; min-height: 100vh; color: #e5e5e5; font-family: 'Inter', sans-serif; }
+          .page-main-title { font-weight: 900 !important; letter-spacing: -1px; color: #fff !important; display: flex; align-items: center; }
+          .title-icon { color: #ff5302; margin-right: 12px; }
+          .letter-spacing-1 { letter-spacing: 0.5px; font-size: 11px; font-weight: 700; color: #ffff !important; display: block; margin-top: 4px; }
+
+          /* Filter Bar */
+          .filter-bento-bar { background: #111; border: 1px solid #222; border-radius: 16px; padding: 20px; }
+          .neo-search-input { background: #161616 !important; border: 1px solid #262626 !important; border-radius: 10px !important; padding: 10px 14px !important; color: #fff !important; width: 280px; }
+          .neo-search-input .anticon { color: #ff5302 !important; }
+          .btn-neo-primary { background: #ff5302 !important; border: none !important; font-weight: 800 !important; border-radius: 10px !important; height: 44px !important; padding: 0 20px !important; letter-spacing: 0.5px; }
+          .btn-neo-primary:hover { background: #ff661d !important; }
+
+          /* Table Layout */
+          .table-bento-container { background: #111; border: 1px solid #222; border-radius: 20px; overflow: hidden; }
+          .custom-neo-table .ant-table { background: transparent !important; }
+          .custom-neo-table .ant-table-thead > tr > th { font-size: 11px !important; font-weight: 800 !important; letter-spacing: 0.5px; border-bottom: 1px solid #222 !important; padding: 18px 20px !important; color: #ffff !important; background: #161616 !important; }
+          .custom-neo-table .ant-table-tbody > tr > td { border-bottom: 1px solid #1a1a1a !important; padding: 16px 20px !important; }
+
+          /* Cells design */
+          .coupon-code-badge { background: #161616; border: 1px dashed #ff5302; color: #ff5302; font-weight: 900; font-size: 12px; letter-spacing: 1px; padding: 6px 14px; border-radius: 8px; display: inline-block; }
+          .benefit-cell { color: #fff; font-weight: 800; font-size: 15px; }
+          .stock-cell { color: #fff; font-weight: 700; font-size: 13px; display: flex; align-items: center; gap: 6px; }
+          .stock-cell.critical { color: #efffff4; }
+          .duration-cell { font-size: 12px; color: #ffff; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+          .duration-cell .end-txt { color: #fff; }
+          .duration-cell .arrow-split { color: #333; font-weight: 900; }
+          .status-pill { font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 6px; }
+          .status-pill.active { color: #22c55e; background: rgba(34, 197, 94, 0.05); }
+          .status-pill.inactive { color: #ffff; background: rgba(255, 255, 255, 0.02); }
+
+          /* Action Buttons */
+          .btn-action-view { background: #161616 !important; color: #ff5302 !important; border-radius: 8px; }
+          .btn-action-view:hover { background: rgba(255, 83, 2, 0.1) !important; }
+          .btn-action-delete { background: #161616 !important; color: #efffff4 !important; border-radius: 8px; }
+          .btn-action-delete:hover { background: rgba(239, 68, 68, 0.1) !important; }
+
+          /* Form Modal Styling */
+          .neo-form-modal .ant-modal-content { background: #0e0e0e !important; border: 1px solid #222 !important; border-radius: 24px !important; padding: 30px !important; }
+          .form-modal-header-title { color: #fff; font-size: 18px; font-weight: 900; letter-spacing: -0.5px; text-transform: uppercase; border-bottom: 1px solid #1a1a1a; padding-bottom: 15px; }
+          .neo-form-container { margin-top: 25px; }
+          .form-sub-section-title { font-size: 10px; font-weight: 900; color: #ffff; letter-spacing: 1px; margin: 20px 0 12px; display: flex; align-items: center; gap: 6px; }
+          .form-sub-section-title:first-of-type { margin-top: 0; }
+          
+          /* Form Controls Override */
+          .ant-form-item { margin-bottom: 16px !important; }
+          .ant-form-item-label label { color: #ffff !important; font-size: 11px !important; font-weight: 700 !important; text-transform: uppercase; }
+          .neo-form-input, .neo-form-select .ant-select-selector, .neo-form-input-number, .neo-form-range-picker, .neo-form-textarea { background: #141414 !important; border: 1px solid #222 !important; border-radius: 10px !important; color: #fff !important; width: 100% !important; padding: 8px 12px !important; }
+          .neo-form-select .ant-select-selector, .neo-form-range-picker { padding: 4px 12px !important; height: 42px !important; }
+          .neo-form-input-number { padding: 4px 4px !important; }
+          .neo-form-textarea { padding: 12px !important; }
+          
+          /* Input Text color forced inside antd internal classes */
+          .ant-input-number-input, .ant-picker-input > input, .ant-select-selection-item { color: #fff !important; font-weight: 600; }
+          .ant-input::placeholder, .ant-input-number-input::placeholder { color: #ffff !important; }
+
+          /* Select Dropdown */
+          .neo-select-dropdown { background: #141414 !important; border: 1px solid #222 !important; border-radius: 10px !important; padding: 6px !important; }
+          .neo-select-dropdown .ant-select-item { color: #fff !important; font-weight: 600; border-radius: 6px; }
+          .neo-select-dropdown .ant-select-item-option-selected { background: #222 !important; color: #fff !important; }
+
+          /* Danger Modal */
+          .modal-danger-title { color: #efffff4; font-weight: 900; }
+          .btn-modal-danger-ok { background: #efffff4 !important; font-weight: 700; border-radius: 8px; }
+          .btn-modal-danger-cancel { background: #161616 !important; border-color: #262626 !important; color: #ffff !important; font-weight: 700; border-radius: 8px; }
+
+          /* Pagination custom */
+          .ant-pagination-item { background: #161616 !important; border-color: #262626 !important; border-radius: 8px; }
+          .ant-pagination-item a { color: #ffff !important; font-weight: 700; }
+          .ant-pagination-item-active { border-color: #ff5302 !important; }
+          .ant-pagination-item-active a { color: #ff5302 !important; }
+          .ant-pagination-prev .ant-pagination-item-link, .ant-pagination-next .ant-pagination-item-link { background: #161616 !important; border-color: #262626 !important; border-radius: 8px; color: #ffff !important; }
+
+          /* Glow focus */
+          .ant-input:focus, .ant-input-focused, .ant-select:focus, .ant-select-focused, .ant-input-number:focus, .ant-input-number-focused, .ant-picker:focus, .ant-picker-focused { border-color: #ff5302 !important; box-shadow: none !important; }
+
+          @media (max-width: 768px) {
+            .neo-search-input { width: 100%; }
+            .mobile-full-width-space { width: 100%; justify-content: space-between; }
+          }
         `}</style>
       </div>
     </ConfigProvider>
